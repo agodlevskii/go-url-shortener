@@ -1,7 +1,6 @@
-package shortener
+package handlers
 
 import (
-	"io"
 	"net/http"
 )
 
@@ -32,33 +31,5 @@ func ShortenerHandler(w http.ResponseWriter, r *http.Request) {
 		ShortenerGetHandler(w, r)
 	default:
 		http.Error(w, "HTTP request method is not supported.", http.StatusMethodNotAllowed)
-	}
-}
-
-func ShortenerPostHandler(w http.ResponseWriter, r *http.Request) {
-	b, err := io.ReadAll(r.Body)
-	if err != nil || len(b) == 0 {
-		http.Error(w, "The original URL is missing. Please attach it to the request body.", http.StatusBadRequest)
-	}
-
-	url := string(b)
-	w.WriteHeader(201)
-	w.Write([]byte(AddUrlToStorage(url)))
-}
-
-func ShortenerGetHandler(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Query().Get("id")
-	if id != "" {
-		url, err := GetUrlFromStorage(id)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		}
-
-		w.Header().Set("Location", url)
-		w.WriteHeader(http.StatusTemporaryRedirect)
-		w.Write([]byte(url))
-	} else {
-		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte(index))
 	}
 }

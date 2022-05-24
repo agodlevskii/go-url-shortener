@@ -1,13 +1,17 @@
-package shortener
+package storage
 
 import (
 	"errors"
 	"strings"
 )
 
-var storage = make(map[string]string)
+var Storage = make(map[string]string)
 
 func AddUrlToStorage(url string) string {
+	if url == "" {
+		return ""
+	}
+
 	parts := strings.Split(url, "://")
 	urlToShorten := url
 	if len(parts) > 1 {
@@ -15,12 +19,12 @@ func AddUrlToStorage(url string) string {
 	}
 
 	surl := urlToShorten[:len(urlToShorten)/2]
-	storage[surl] = url
+	Storage[surl] = url
 	return surl
 }
 
 func GetUrlFromStorage(id string) (string, error) {
-	url := storage[id]
+	url := Storage[id]
 	if url == "" {
 		return "", errors.New("the URL with associated ID is not found")
 	}
