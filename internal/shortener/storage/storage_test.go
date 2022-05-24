@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestAddUrlToStorage(t *testing.T) {
+func TestAddURLToStorage(t *testing.T) {
 	type args struct {
 		url string
 	}
@@ -31,8 +31,8 @@ func TestAddUrlToStorage(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := AddUrlToStorage(tt.args.url); got != tt.want {
-				t.Errorf("AddUrlToStorage() = %v, want %v", got, tt.want)
+			if got := AddURLToStorage(tt.args.url); got != tt.want {
+				t.Errorf("AddURLToStorage() = %v, want %v", got, tt.want)
 			}
 
 			if Storage[tt.want] != tt.args.url && tt.want != "" {
@@ -42,7 +42,7 @@ func TestAddUrlToStorage(t *testing.T) {
 	}
 }
 
-func TestGetUrlFromStorage(t *testing.T) {
+func TestGetURLFromStorage(t *testing.T) {
 	type args struct {
 		id string
 	}
@@ -81,13 +81,13 @@ func TestGetUrlFromStorage(t *testing.T) {
 				}
 			}
 
-			got, err := GetUrlFromStorage(tt.args.id)
+			got, err := GetURLFromStorage(tt.args.id)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GetUrlFromStorage() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetURLFromStorage() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("GetUrlFromStorage() got = %v, want %v", got, tt.want)
+				t.Errorf("GetURLFromStorage() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

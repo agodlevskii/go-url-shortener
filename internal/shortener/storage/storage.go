@@ -7,7 +7,7 @@ import (
 
 var Storage = make(map[string]string)
 
-func AddUrlToStorage(url string) string {
+func AddURLToStorage(url string) string {
 	if url == "" {
 		return ""
 	}
@@ -23,7 +23,7 @@ func AddUrlToStorage(url string) string {
 	return surl
 }
 
-func GetUrlFromStorage(id string) (string, error) {
+func GetURLFromStorage(id string) (string, error) {
 	url := Storage[id]
 	if url == "" {
 		return "", errors.New("the URL with associated ID is not found")

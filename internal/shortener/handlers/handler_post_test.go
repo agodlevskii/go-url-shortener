@@ -75,6 +75,7 @@ func TestShortenerPostHandler(t *testing.T) {
 				t.Errorf(`Expected content type is "%s", but got "%s"`, tt.want.contentType, ct)
 			}
 
+			defer res.Body.Close()
 			b, err := io.ReadAll(res.Body)
 			if err != nil {
 				t.Fatal(err)

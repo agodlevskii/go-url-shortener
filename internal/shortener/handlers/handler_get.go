@@ -8,7 +8,7 @@ import (
 func ShortenerGetHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 	if id != "" {
-		url, err := storage.GetUrlFromStorage(id)
+		url, err := storage.GetURLFromStorage(id)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}

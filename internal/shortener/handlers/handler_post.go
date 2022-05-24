@@ -15,5 +15,5 @@ func ShortenerPostHandler(w http.ResponseWriter, r *http.Request) {
 	url := string(b)
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(201)
-	w.Write([]byte(storage.AddUrlToStorage(url)))
+	w.Write([]byte(storage.AddURLToStorage(url)))
 }
