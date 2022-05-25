@@ -18,11 +18,8 @@ type MemoRepo struct {
 
 func NewMemoryRepo(data map[string]string) MemoRepo {
 	repo := MemoRepo{db: make(map[string]string)}
-
-	if data != nil {
-		for k, v := range data {
-			repo.db[k] = v
-		}
+	for k, v := range data {
+		repo.db[k] = v
 	}
 
 	return repo
