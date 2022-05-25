@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"go-url-shortener/internal/shortener/storage"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -37,26 +36,14 @@ func TestShortenerGetHandler(t *testing.T) {
 			},
 		},
 		{
-			name: "Empty ID parameter",
-			args: handlerArgs{
-				w: httptest.NewRecorder(),
-				r: httptest.NewRequest(http.MethodGet, "/?id=", nil),
-			},
-			want: want{
-				code:        201,
-				resp:        index,
-				contentType: "text/html; charset=utf-8",
-			},
-		},
-		{
 			name: "Incorrect ID parameter value",
 			args: handlerArgs{
 				w: httptest.NewRecorder(),
-				r: httptest.NewRequest(http.MethodGet, "/?id=foo", nil),
+				r: httptest.NewRequest(http.MethodGet, "/foo", nil),
 			},
 			want: want{
 				code:        400,
-				resp:        "the URL with associated ID is not found",
+				resp:        "no matching URL found",
 				contentType: "text/plain; charset=utf-8",
 			},
 		},
@@ -65,7 +52,7 @@ func TestShortenerGetHandler(t *testing.T) {
 			storage: map[string]string{"googl": "https://google.com"},
 			args: handlerArgs{
 				w: httptest.NewRecorder(),
-				r: httptest.NewRequest(http.MethodGet, "/?id=googl", nil),
+				r: httptest.NewRequest(http.MethodGet, "/googl", nil),
 			},
 			want: want{
 				code:        307,
@@ -80,7 +67,7 @@ func TestShortenerGetHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if len(tt.storage) > 0 {
 				for k, v := range tt.storage {
-					storage.Storage[k] = v
+					db.Add(k, v)
 				}
 			}
 
@@ -114,9 +101,7 @@ func TestShortenerGetHandler(t *testing.T) {
 			}
 
 			if len(tt.storage) > 0 {
-				for k := range tt.storage {
-					delete(storage.Storage, k)
-				}
+				db.Clear()
 			}
 		})
 	}

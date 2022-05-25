@@ -2,32 +2,71 @@ package storage
 
 import (
 	"errors"
-	"strings"
 )
 
-var Storage = make(map[string]string)
-
-func AddURLToStorage(url string) string {
-	if url == "" {
-		return ""
-	}
-
-	parts := strings.Split(url, "://")
-	urlToShorten := url
-	if len(parts) > 1 {
-		urlToShorten = parts[1]
-	}
-
-	surl := urlToShorten[:len(urlToShorten)/2]
-	Storage[surl] = url
-	return surl
+type Storager interface {
+	Add(id, val string) error
+	Has(string) bool
+	Get(string) (string, error)
+	Remove(string) error
+	Clear()
 }
 
-func GetURLFromStorage(id string) (string, error) {
-	url := Storage[id]
-	if url == "" {
-		return "", errors.New("the URL with associated ID is not found")
+type MemoRepo struct {
+	db map[string]string
+}
+
+func NewMemoryRepo(data map[string]string) MemoRepo {
+	repo := MemoRepo{db: make(map[string]string)}
+
+	if data != nil {
+		for k, v := range data {
+			repo.db[k] = v
+		}
 	}
 
-	return url, nil
+	return repo
+}
+
+func (m MemoRepo) Add(id string, url string) error {
+	m.db[id] = url
+	return nil
+}
+
+func (m MemoRepo) Has(id string) bool {
+	if m.db[id] != "" {
+		return true
+	}
+	return false
+}
+
+func (m MemoRepo) Get(id string) (string, error) {
+	if m.Has(id) {
+		return m.db[id], nil
+	}
+
+	return "", errors.New("no matching URL found")
+}
+
+func (m MemoRepo) Remove(id string) error {
+	if m.Has(id) {
+		delete(m.db, id)
+		return nil
+	}
+
+	return errors.New("no matching URL found")
+}
+
+func (m MemoRepo) Clear() {
+	for id := range m.db {
+		delete(m.db, id)
+	}
+}
+
+func AddURLToStorage(repo Storager, id string, url string) error {
+	return repo.Add(id, url)
+}
+
+func GetURLFromStorage(repo Storager, id string) (string, error) {
+	return repo.Get(id)
 }

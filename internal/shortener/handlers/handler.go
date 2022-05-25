@@ -1,8 +1,11 @@
 package handlers
 
 import (
+	"go-url-shortener/internal/shortener/storage"
 	"net/http"
 )
+
+var db = storage.NewMemoryRepo(nil)
 
 var index = `<html>
     <head>

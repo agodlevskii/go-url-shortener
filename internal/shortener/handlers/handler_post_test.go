@@ -54,7 +54,7 @@ func TestShortenerPostHandler(t *testing.T) {
 			},
 			want: want{
 				code:        201,
-				resp:        "googl",
+				resp:        "http://example.com/XVlBzgb",
 				contentType: "text/plain; charset=utf-8",
 			},
 		},

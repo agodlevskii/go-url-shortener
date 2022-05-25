@@ -2,13 +2,19 @@ package handlers
 
 import (
 	"go-url-shortener/internal/shortener/storage"
+	"go-url-shortener/internal/shortener/utils"
 	"net/http"
+	"path"
 )
 
 func ShortenerGetHandler(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Query().Get("id")
-	if id != "" {
-		url, err := storage.GetURLFromStorage(id)
+	if !utils.IsURLValid(r.URL) {
+		http.Error(w, "You provided an incorrect URL.", http.StatusBadRequest)
+	}
+
+	id := path.Base(r.URL.Path)
+	if id != "" && id != "/" {
+		url, err := storage.GetURLFromStorage(db, id)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
