@@ -6,37 +6,29 @@ import (
 
 func TestAddURLToStorage(t *testing.T) {
 	type args struct {
-		url string
+		repo Storager
+		id   string
+		url  string
 	}
 	tests := []struct {
-		name string
-		args args
-		want string
+		name    string
+		args    args
+		wantErr bool
 	}{
 		{
-			name: "URL without a prefix",
-			args: args{url: "google.com"},
-			want: "googl",
-		},
-		{
-			name: "URL with a prefix",
-			args: args{url: "https://google.com"},
-			want: "googl",
-		},
-		{
-			name: "Empty argument",
-			args: args{url: ""},
-			want: "",
+			name: "Correct URL",
+			args: args{
+				repo: NewMemoryRepo(nil),
+				id:   "googl",
+				url:  "https://google.com",
+			},
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := AddURLToStorage(tt.args.url); got != tt.want {
-				t.Errorf("AddURLToStorage() = %v, want %v", got, tt.want)
-			}
-
-			if Storage[tt.want] != tt.args.url && tt.want != "" {
-				t.Errorf(`Expected storage value for "#{tt.args.url}" to be "#{tt.want}", but got ""`)
+			if err := AddURLToStorage(tt.args.repo, tt.args.id, tt.args.url); (err != nil) != tt.wantErr {
+				t.Errorf("AddURLToStorage() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -44,50 +36,226 @@ func TestAddURLToStorage(t *testing.T) {
 
 func TestGetURLFromStorage(t *testing.T) {
 	type args struct {
-		id string
+		repo Storager
+		id   string
 	}
 	tests := []struct {
 		name    string
 		args    args
 		want    string
 		wantErr bool
-		storage map[string]string
 	}{
 		{
-			name:    "Empty ID",
-			args:    args{id: ""},
-			want:    "",
+			name: "Missing ID",
+			args: args{
+				repo: NewMemoryRepo(nil),
+				id:   "googl",
+			},
 			wantErr: true,
 		},
 		{
-			name:    "Missing ID value",
-			args:    args{id: "foo"},
-			want:    "",
-			wantErr: true,
-		},
-		{
-			name:    "Existing ID value",
-			args:    args{id: "googl"},
+			name: "Existing ID",
+			args: args{
+				repo: NewMemoryRepo(map[string]string{"googl": "https://google.com"}),
+				id:   "googl",
+			},
 			want:    "https://google.com",
 			wantErr: false,
-			storage: map[string]string{"googl": "https://google.com"},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if len(tt.storage) > 0 {
-				for k, v := range tt.storage {
-					Storage[k] = v
-				}
-			}
-
-			got, err := GetURLFromStorage(tt.args.id)
+			got, err := GetURLFromStorage(tt.args.repo, tt.args.id)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetURLFromStorage() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
 				t.Errorf("GetURLFromStorage() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestMemoRepo_Add(t *testing.T) {
+	type fields struct {
+		db map[string]string
+	}
+	type args struct {
+		id  string
+		url string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "Correct URL",
+			args: args{
+				id:  "googl",
+				url: "https://google.com",
+			},
+			fields:  fields{db: map[string]string{}},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := MemoRepo{
+				db: tt.fields.db,
+			}
+			if err := m.Add(tt.args.id, tt.args.url); (err != nil) != tt.wantErr {
+				t.Errorf("Add() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestMemoRepo_Clear(t *testing.T) {
+	type fields struct {
+		db map[string]string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+	}{
+		{
+			name:   "Correct clean",
+			fields: fields{db: map[string]string{"googl": "https://google.com"}},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := MemoRepo{
+				db: tt.fields.db,
+			}
+			m.Clear()
+
+			if len(m.db) > 0 {
+				t.Errorf("Clear(): expect the repo to be empty, but found #{lenm.db) elements")
+			}
+		})
+	}
+}
+
+func TestMemoRepo_Get(t *testing.T) {
+	type fields struct {
+		db map[string]string
+	}
+	type args struct {
+		id string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			name:    "Missing ID",
+			fields:  fields{db: map[string]string{"googl": "https://google.com"}},
+			args:    args{id: "foo"},
+			wantErr: true,
+		},
+		{
+			name:    "Existing ID",
+			fields:  fields{db: map[string]string{"googl": "https://google.com"}},
+			args:    args{id: "googl"},
+			want:    "https://google.com",
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := MemoRepo{
+				db: tt.fields.db,
+			}
+			got, err := m.Get(tt.args.id)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Get() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("Get() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestMemoRepo_Has(t *testing.T) {
+	type fields struct {
+		db map[string]string
+	}
+	type args struct {
+		id string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   bool
+	}{
+		{
+			name:   "Missing ID",
+			fields: fields{db: map[string]string{"googl": "https://google.com"}},
+			args:   args{id: "foo"},
+			want:   false,
+		},
+		{
+			name:   "Existing ID",
+			fields: fields{db: map[string]string{"googl": "https://google.com"}},
+			args:   args{id: "googl"},
+			want:   true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := MemoRepo{
+				db: tt.fields.db,
+			}
+			if got := m.Has(tt.args.id); got != tt.want {
+				t.Errorf("Has() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestMemoRepo_Remove(t *testing.T) {
+	type fields struct {
+		db map[string]string
+	}
+	type args struct {
+		id string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		{
+			name:    "Missing ID",
+			fields:  fields{db: map[string]string{"googl": "https://google.com"}},
+			args:    args{id: "foo"},
+			wantErr: true,
+		},
+		{
+			name:    "Existing ID",
+			fields:  fields{db: map[string]string{"googl": "https://google.com"}},
+			args:    args{id: "googl"},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := MemoRepo{
+				db: tt.fields.db,
+			}
+			if err := m.Remove(tt.args.id); (err != nil) != tt.wantErr {
+				t.Errorf("Remove() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
