@@ -34,10 +34,7 @@ func (m MemoRepo) Add(id string, url string) error {
 }
 
 func (m MemoRepo) Has(id string) bool {
-	if m.db[id] != "" {
-		return true
-	}
-	return false
+	return m.db[id] != ""
 }
 
 func (m MemoRepo) Get(id string) (string, error) {
