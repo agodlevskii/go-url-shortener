@@ -8,9 +8,5 @@ func IsURLValid(rawURL *url.URL) bool {
 
 func IsURLStringValid(rawURL string) bool {
 	_, err := url.ParseRequestURI(rawURL)
-	if err != nil {
-		return false
-	}
-
-	return true
+	return err == nil
 }
