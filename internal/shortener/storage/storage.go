@@ -18,10 +18,7 @@ type MemoRepo struct {
 
 func NewMemoryRepo(data map[string]string) MemoRepo {
 	repo := MemoRepo{db: make(map[string]string)}
-	for k, v := range data {
-		repo.db[k] = v
-	}
-
+	repo.Init(data)
 	return repo
 }
 
@@ -49,6 +46,14 @@ func (m MemoRepo) Remove(id string) error {
 	}
 
 	return errors.New("no matching URL found")
+}
+
+func (m MemoRepo) Init(data map[string]string) error {
+	for k, v := range data {
+		m.db[k] = v
+	}
+
+	return nil
 }
 
 func (m MemoRepo) Clear() {

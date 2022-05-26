@@ -7,8 +7,9 @@ import (
 )
 
 func main() {
-	http.HandleFunc("/", handlers.ShortenerHandler)
-	err := http.ListenAndServe("localhost:8080", nil)
+	r := handlers.NewShortenerRouter()
+
+	err := http.ListenAndServe("localhost:8080", r)
 	if err != nil {
 		fmt.Println(err)
 	}
