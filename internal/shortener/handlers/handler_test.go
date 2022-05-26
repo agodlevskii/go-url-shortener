@@ -54,6 +54,8 @@ func TestNewShortenerRouter(t *testing.T) {
 	resp, _ := testRequest(t, ts, http.MethodPut, "/", "")
 	assert.Error(t, errors.New("This HTTP method is not allowed."))
 	assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
+
+	defer resp.Body.Close()
 }
 
 func TestShortenUrl(t *testing.T) {
@@ -115,6 +117,8 @@ func TestShortenUrl(t *testing.T) {
 			} else {
 				assert.Equal(t, tt.want.resp, body)
 			}
+
+			defer resp.Body.Close()
 		})
 	}
 }
@@ -187,6 +191,8 @@ func TestShortenerGetHandler(t *testing.T) {
 			assert.Equal(t, tt.want.contentType, resp.Header.Get("Content-Type"))
 			assert.Equal(t, tt.want.location, resp.Header.Get("Location"))
 			assert.Equal(t, tt.want.resp, body)
+
+			defer resp.Body.Close()
 
 			if len(tt.storage) > 0 {
 				db.Clear()

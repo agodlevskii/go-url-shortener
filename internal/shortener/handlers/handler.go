@@ -33,8 +33,8 @@ func NewShortenerRouter() *chi.Mux {
 	r := chi.NewRouter()
 
 	r.Route("/", func(r chi.Router) {
-		r.Post("/", ShortenUrl)
-		r.Get("/{id}", GetFullUrl)
+		r.Post("/", ShortenURL)
+		r.Get("/{id}", GetFullURL)
 		r.Get("/", GetHomePage)
 
 		r.NotFound(func(writer http.ResponseWriter, request *http.Request) {
@@ -51,7 +51,7 @@ func GetHomePage(w http.ResponseWriter, _ *http.Request) {
 	w.Write([]byte(index))
 }
 
-func GetFullUrl(w http.ResponseWriter, r *http.Request) {
+func GetFullURL(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	url, err := storage.GetURLFromStorage(db, id)
 	if err != nil {
@@ -64,7 +64,7 @@ func GetFullUrl(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(url))
 }
 
-func ShortenUrl(w http.ResponseWriter, r *http.Request) {
+func ShortenURL(w http.ResponseWriter, r *http.Request) {
 	b, err := io.ReadAll(r.Body)
 	if err != nil || len(b) == 0 {
 		http.Error(w, "The original URL is missing. Please attach it to the request body.", http.StatusBadRequest)
