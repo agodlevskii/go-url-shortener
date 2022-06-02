@@ -1,6 +1,7 @@
-package utils
+package validators
 
 import (
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
@@ -31,9 +32,7 @@ func TestIsURLStringValid(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := IsURLStringValid(tt.args.rawURL); got != tt.want {
-				t.Errorf("IsURLStringValid() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, IsURLStringValid(tt.args.rawURL))
 		})
 	}
 }

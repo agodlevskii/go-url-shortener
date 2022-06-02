@@ -1,44 +1,31 @@
 package handlers
 
 import (
+	"errors"
 	"github.com/go-chi/chi/v5"
-	"go-url-shortener/internal/shortener/storage"
-	"go-url-shortener/internal/shortener/utils"
+	log "github.com/sirupsen/logrus"
+	"go-url-shortener/configs"
+	"go-url-shortener/internal/generators"
+	"go-url-shortener/internal/storage"
+	"go-url-shortener/internal/validators"
+	"html/template"
 	"io"
 	"net/http"
 )
 
-var db = storage.NewMemoryRepo(nil)
-
-var index = `<html>
-    <head>
-    	<title>Go URL Shortener</title>
-    </head>
-    <body>
-		<header>
-        	<h1>Go URL Shortener</h1>
-		</header>
-
-		<main>
-			<h2>How to use the application<h2>
-			<ul>
-				<li>To shorten the URL: send the POST request to this route and send the initial URL as the request body.</li>
-				<li>To get the shortened URL: send the GET request and put the ID of the URL in the query parameters.</li>
-			</ul>
-		</main>
-    </body>
-</html>`
+var db = storage.NewMemoryRepo()
 
 func NewShortenerRouter() *chi.Mux {
 	r := chi.NewRouter()
 
 	r.Route("/", func(r chi.Router) {
 		r.Post("/", ShortenURL)
-		r.Get("/{id}", GetFullURL)
 		r.Get("/", GetHomePage)
+		r.Get("/{id}", GetFullURL)
 
 		r.NotFound(func(writer http.ResponseWriter, request *http.Request) {
 			http.Error(writer, "This HTTP method is not allowed.", http.StatusMethodNotAllowed)
+			return
 		})
 	})
 
@@ -46,9 +33,16 @@ func NewShortenerRouter() *chi.Mux {
 }
 
 func GetHomePage(w http.ResponseWriter, _ *http.Request) {
+	tmpl, err := template.ParseFiles("templates/index.html")
+	if err != nil {
+		log.Error(err)
+		http.Error(w, "Something went wrong. Please, try again later.", http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte(index))
+	w.WriteHeader(http.StatusOK)
+	tmpl.Execute(w, nil)
 }
 
 func GetFullURL(w http.ResponseWriter, r *http.Request) {
@@ -56,12 +50,10 @@ func GetFullURL(w http.ResponseWriter, r *http.Request) {
 	url, err := storage.GetURLFromStorage(db, id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.Header().Set("Location", url)
-	w.WriteHeader(http.StatusTemporaryRedirect)
-	w.Write([]byte(url))
+	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
 func ShortenURL(w http.ResponseWriter, r *http.Request) {
@@ -72,16 +64,36 @@ func ShortenURL(w http.ResponseWriter, r *http.Request) {
 	}
 
 	uri := string(b)
-	if !utils.IsURLStringValid(uri) {
+	if !validators.IsURLStringValid(uri) {
 		http.Error(w, "You provided an incorrect URL.", http.StatusBadRequest)
 		return
 	}
 
-	id := utils.GenerateString()
+	id, err := generateId()
+	if err != nil {
+		log.Error(err)
+		http.Error(w, "Couldn't generate the short URL. Please try again later.", http.StatusInternalServerError)
+		return
+	}
+
 	storage.AddURLToStorage(db, id, uri)
-	res := "http://" + r.Host + "/" + id
+	res := "http://" + configs.Host + ":" + configs.Port + "/" + id
 
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.WriteHeader(201)
+	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte(res))
+}
+
+func generateId() (string, error) {
+	id := generators.GenerateString(7)
+
+	for step := 1; step < 10; step++ {
+		if !db.Has(id) {
+			return id, nil
+		}
+
+		id = generators.GenerateString(7)
+	}
+
+	return "", errors.New("couldn't generate ID")
 }

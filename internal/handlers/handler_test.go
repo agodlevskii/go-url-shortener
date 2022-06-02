@@ -5,9 +5,11 @@ import (
 	"errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go-url-shortener/configs"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 )
@@ -77,7 +79,7 @@ func TestShortenUrl(t *testing.T) {
 		{
 			name: "Missing body",
 			want: want{
-				code:        400,
+				code:        http.StatusBadRequest,
 				resp:        "The original URL is missing. Please attach it to the request body.",
 				contentType: "text/plain; charset=utf-8",
 			},
@@ -85,7 +87,7 @@ func TestShortenUrl(t *testing.T) {
 		{
 			name: "Empty body",
 			want: want{
-				code:        400,
+				code:        http.StatusBadRequest,
 				resp:        "The original URL is missing. Please attach it to the request body.",
 				contentType: "text/plain; charset=utf-8",
 			},
@@ -95,8 +97,8 @@ func TestShortenUrl(t *testing.T) {
 			data:         "https://google.com",
 			checkInclude: true,
 			want: want{
-				code:        201,
-				resp:        "XVlBzgb",
+				code:        http.StatusCreated,
+				resp:        "http://" + configs.Host + ":" + configs.Port,
 				contentType: "text/plain; charset=utf-8",
 			},
 		},
@@ -144,8 +146,7 @@ func TestShortenerGetHandler(t *testing.T) {
 			name: "No ID query parameter",
 			id:   "",
 			want: want{
-				code:        201,
-				resp:        index,
+				code:        http.StatusOK,
 				contentType: "text/html; charset=utf-8",
 			},
 		},
@@ -153,7 +154,7 @@ func TestShortenerGetHandler(t *testing.T) {
 			name: "Incorrect ID parameter value",
 			id:   "foo",
 			want: want{
-				code:        400,
+				code:        http.StatusBadRequest,
 				resp:        "no matching URL found",
 				contentType: "text/plain; charset=utf-8",
 			},
@@ -163,9 +164,9 @@ func TestShortenerGetHandler(t *testing.T) {
 			id:      "googl",
 			storage: map[string]string{"googl": "https://google.com"},
 			want: want{
-				code:        307,
-				resp:        "https://google.com",
-				contentType: "text/plain; charset=utf-8",
+				code:        http.StatusTemporaryRedirect,
+				resp:        `https://google.com`,
+				contentType: "text/html; charset=utf-8",
 				location:    "https://google.com",
 			},
 		},
@@ -175,10 +176,14 @@ func TestShortenerGetHandler(t *testing.T) {
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
+	os.Chdir("../../")
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if len(tt.storage) > 0 {
-				db.Init(tt.storage)
+				for k, v := range tt.storage {
+					db.Add(k, v)
+				}
 			}
 
 			path := "/"
@@ -190,7 +195,10 @@ func TestShortenerGetHandler(t *testing.T) {
 			assert.Equal(t, tt.want.code, resp.StatusCode)
 			assert.Equal(t, tt.want.contentType, resp.Header.Get("Content-Type"))
 			assert.Equal(t, tt.want.location, resp.Header.Get("Location"))
-			assert.Equal(t, tt.want.resp, body)
+
+			if tt.want.resp != "" {
+				assert.Contains(t, body, tt.want.resp)
+			}
 
 			defer resp.Body.Close()
 

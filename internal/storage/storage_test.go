@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
@@ -18,7 +19,7 @@ func TestAddURLToStorage(t *testing.T) {
 		{
 			name: "Correct URL",
 			args: args{
-				repo: NewMemoryRepo(nil),
+				repo: NewMemoryRepo(),
 				id:   "googl",
 				url:  "https://google.com",
 			},
@@ -27,8 +28,11 @@ func TestAddURLToStorage(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := AddURLToStorage(tt.args.repo, tt.args.id, tt.args.url); (err != nil) != tt.wantErr {
-				t.Errorf("AddURLToStorage() error = %v, wantErr %v", err, tt.wantErr)
+			err := AddURLToStorage(tt.args.repo, tt.args.id, tt.args.url)
+			if tt.wantErr {
+				assert.Error(t, err, tt.wantErr)
+			} else {
+				assert.NoError(t, err, tt.wantErr)
 			}
 		})
 	}
@@ -42,13 +46,14 @@ func TestGetURLFromStorage(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
+		storage map[string]string
 		want    string
 		wantErr bool
 	}{
 		{
 			name: "Missing ID",
 			args: args{
-				repo: NewMemoryRepo(nil),
+				repo: NewMemoryRepo(),
 				id:   "googl",
 			},
 			wantErr: true,
@@ -56,23 +61,29 @@ func TestGetURLFromStorage(t *testing.T) {
 		{
 			name: "Existing ID",
 			args: args{
-				repo: NewMemoryRepo(map[string]string{"googl": "https://google.com"}),
+				repo: NewMemoryRepo(),
 				id:   "googl",
 			},
+			storage: map[string]string{"googl": "https://google.com"},
 			want:    "https://google.com",
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetURLFromStorage(tt.args.repo, tt.args.id)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetURLFromStorage() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.storage != nil {
+				for k, v := range tt.storage {
+					tt.args.repo.Add(k, v)
+				}
 			}
-			if got != tt.want {
-				t.Errorf("GetURLFromStorage() got = %v, want %v", got, tt.want)
+			url, err := GetURLFromStorage(tt.args.repo, tt.args.id)
+			if tt.wantErr {
+				assert.Error(t, err, tt.wantErr)
+			} else {
+				assert.NoError(t, err, tt.wantErr)
 			}
+
+			assert.Equal(t, tt.want, url)
 		})
 	}
 }
@@ -106,8 +117,12 @@ func TestMemoRepo_Add(t *testing.T) {
 			m := MemoRepo{
 				db: tt.fields.db,
 			}
-			if err := m.Add(tt.args.id, tt.args.url); (err != nil) != tt.wantErr {
-				t.Errorf("Add() error = %v, wantErr %v", err, tt.wantErr)
+
+			err := m.Add(tt.args.id, tt.args.url)
+			if tt.wantErr {
+				assert.Error(t, err, tt.wantErr)
+			} else {
+				assert.NoError(t, err, tt.wantErr)
 			}
 		})
 	}
@@ -133,9 +148,7 @@ func TestMemoRepo_Clear(t *testing.T) {
 			}
 			m.Clear()
 
-			if len(m.db) > 0 {
-				t.Errorf("Clear(): expect the repo to be empty, but found #{lenm.db) elements")
-			}
+			assert.Zero(t, len(m.db))
 		})
 	}
 }
@@ -173,14 +186,15 @@ func TestMemoRepo_Get(t *testing.T) {
 			m := MemoRepo{
 				db: tt.fields.db,
 			}
-			got, err := m.Get(tt.args.id)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Get() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			url, err := m.Get(tt.args.id)
+
+			if tt.wantErr {
+				assert.Error(t, err, tt.wantErr)
+			} else {
+				assert.NoError(t, err, tt.wantErr)
 			}
-			if got != tt.want {
-				t.Errorf("Get() got = %v, want %v", got, tt.want)
-			}
+
+			assert.Equal(t, tt.want, url)
 		})
 	}
 }
@@ -216,9 +230,8 @@ func TestMemoRepo_Has(t *testing.T) {
 			m := MemoRepo{
 				db: tt.fields.db,
 			}
-			if got := m.Has(tt.args.id); got != tt.want {
-				t.Errorf("Has() = %v, want %v", got, tt.want)
-			}
+
+			assert.Equal(t, tt.want, m.Has(tt.args.id))
 		})
 	}
 }
@@ -254,8 +267,12 @@ func TestMemoRepo_Remove(t *testing.T) {
 			m := MemoRepo{
 				db: tt.fields.db,
 			}
-			if err := m.Remove(tt.args.id); (err != nil) != tt.wantErr {
-				t.Errorf("Remove() error = %v, wantErr %v", err, tt.wantErr)
+
+			err := m.Remove(tt.args.id)
+			if tt.wantErr {
+				assert.Error(t, err, tt.wantErr)
+			} else {
+				assert.NoError(t, err, tt.wantErr)
 			}
 		})
 	}
