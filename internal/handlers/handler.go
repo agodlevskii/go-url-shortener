@@ -25,7 +25,6 @@ func NewShortenerRouter() *chi.Mux {
 
 		r.NotFound(func(writer http.ResponseWriter, request *http.Request) {
 			http.Error(writer, "This HTTP method is not allowed.", http.StatusMethodNotAllowed)
-			return
 		})
 	})
 
@@ -69,7 +68,7 @@ func ShortenURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := generateId()
+	id, err := generateID()
 	if err != nil {
 		log.Error(err)
 		http.Error(w, "Couldn't generate the short URL. Please try again later.", http.StatusInternalServerError)
@@ -84,7 +83,7 @@ func ShortenURL(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(res))
 }
 
-func generateId() (string, error) {
+func generateID() (string, error) {
 	id := generators.GenerateString(7)
 
 	for step := 1; step < 10; step++ {
