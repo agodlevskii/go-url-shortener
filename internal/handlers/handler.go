@@ -15,7 +15,7 @@ func NewShortenerRouter(db storage.MemoRepo) *chi.Mux {
 		r.Get("/{id}", GetFullURL(db))
 
 		r.Route("/api", func(r chi.Router) {
-			r.Post("/shorten", ApiPostHandler(db))
+			r.Post("/shorten", APIPostHandler(db))
 		})
 
 		r.NotFound(func(writer http.ResponseWriter, request *http.Request) {

@@ -1,11 +1,9 @@
 package handlers
 
 import (
-	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"go-url-shortener/configs"
 	"go-url-shortener/internal/storage"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -71,17 +69,12 @@ func TestWebPostHandler(t *testing.T) {
 				assert.Equal(t, tt.want.resp, body)
 			}
 
-			defer func(Body io.ReadCloser) {
-				err := Body.Close()
-				if err != nil {
-					log.Error(err)
-				}
-			}(resp.Body)
+			defer resp.Body.Close()
 		})
 	}
 }
 
-func TestApiPostHandler(t *testing.T) {
+func TestAPIPostHandler(t *testing.T) {
 	type (
 		args struct {
 			db storage.MemoRepo
@@ -145,12 +138,7 @@ func TestApiPostHandler(t *testing.T) {
 				assert.Equal(t, tt.want.resp, body)
 			}
 
-			defer func(Body io.ReadCloser) {
-				err := Body.Close()
-				if err != nil {
-					log.Error(err)
-				}
-			}(resp.Body)
+			defer resp.Body.Close()
 		})
 	}
 }

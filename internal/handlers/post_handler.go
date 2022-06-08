@@ -20,7 +20,7 @@ type PostResponse struct {
 	Result string `json:"result"`
 }
 
-func ApiPostHandler(db storage.MemoRepo) func(w http.ResponseWriter, r *http.Request) {
+func APIPostHandler(db storage.MemoRepo) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req PostRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -29,20 +29,20 @@ func ApiPostHandler(db storage.MemoRepo) func(w http.ResponseWriter, r *http.Req
 			return
 		}
 
-		uri := string(req.URL)
+		uri := req.URL
 		if !validators.IsURLStringValid(uri) {
 			http.Error(w, "You provided an incorrect URL request.", http.StatusBadRequest)
 			return
 		}
 
-		shortUri, err := shortenURL(db, uri)
+		shortURI, err := shortenURL(db, uri)
 		if err != nil {
 			log.Error(err)
 			http.Error(w, "Couldn't generate the short URL. Please try again later.", http.StatusInternalServerError)
 			return
 		}
 
-		res := PostResponse{Result: shortUri}
+		res := PostResponse{Result: shortURI}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(201)
 
@@ -57,7 +57,7 @@ func WebPostHandler(db storage.MemoRepo) func(w http.ResponseWriter, r *http.Req
 	return func(w http.ResponseWriter, r *http.Request) {
 		b, err := io.ReadAll(r.Body)
 		if err != nil || len(b) == 0 {
-			http.Error(w, "The original URL is missing. Please attach it to the request body.", http.StatusBadRequest)
+			http.Error(w, "he original URL is missing. Please attach it to the request body.", http.StatusBadRequest)
 			return
 		}
 
@@ -85,7 +85,7 @@ func WebPostHandler(db storage.MemoRepo) func(w http.ResponseWriter, r *http.Req
 
 func shortenURL(db storage.MemoRepo, uri string) (string, error) {
 	if !validators.IsURLStringValid(uri) {
-		return "", errors.New("You provided an incorrect URL.")
+		return "", errors.New("you provided an incorrect URL")
 	}
 
 	id, err := generators.GenerateID(db, 7)

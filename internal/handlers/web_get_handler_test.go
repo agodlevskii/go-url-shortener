@@ -4,7 +4,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"go-url-shortener/internal/storage"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -93,12 +92,7 @@ func TestGetFullURL(t *testing.T) {
 				assert.Contains(t, body, tt.want.resp)
 			}
 
-			defer func(Body io.ReadCloser) {
-				err = Body.Close()
-				if err != nil {
-					log.Error(err)
-				}
-			}(resp.Body)
+			defer resp.Body.Close()
 
 			if len(tt.storage) > 0 {
 				db.Clear()
