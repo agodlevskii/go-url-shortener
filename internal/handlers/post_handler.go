@@ -57,7 +57,7 @@ func WebPostHandler(db storage.MemoRepo) func(w http.ResponseWriter, r *http.Req
 	return func(w http.ResponseWriter, r *http.Request) {
 		b, err := io.ReadAll(r.Body)
 		if err != nil || len(b) == 0 {
-			http.Error(w, "he original URL is missing. Please attach it to the request body.", http.StatusBadRequest)
+			http.Error(w, "The original URL is missing. Please attach it to the request body.", http.StatusBadRequest)
 			return
 		}
 
