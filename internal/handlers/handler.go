@@ -11,8 +11,12 @@ func NewShortenerRouter(db storage.MemoRepo) *chi.Mux {
 
 	r.Route("/", func(r chi.Router) {
 		r.Get("/", GetHomePage)
-		r.Post("/", ShortenURL(db))
+		r.Post("/", WebPostHandler(db))
 		r.Get("/{id}", GetFullURL(db))
+
+		r.Route("/api", func(r chi.Router) {
+			r.Post("/shorten", ApiPostHandler(db))
+		})
 
 		r.NotFound(func(writer http.ResponseWriter, request *http.Request) {
 			http.Error(writer, "This HTTP method is not allowed.", http.StatusMethodNotAllowed)
