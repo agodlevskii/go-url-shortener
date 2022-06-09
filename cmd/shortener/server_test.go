@@ -1,7 +1,7 @@
 package main
 
 import (
-	"go-url-shortener/internal/test_helpers"
+	"go-url-shortener/internal/testhelp"
 	"testing"
 )
 
@@ -25,12 +25,12 @@ func Test_getServerAddress(t *testing.T) {
 		},
 	}
 
-	test_helpers.RemoveEnvVar(addrKey)
+	testhelp.RemoveEnvVar(addrKey)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.args.addr != "" {
-				test_helpers.SetEnvVar(addrKey, tt.args.addr)
+				testhelp.SetEnvVar(addrKey, tt.args.addr)
 			}
 
 			got, err := getServerAddress()
@@ -42,7 +42,7 @@ func Test_getServerAddress(t *testing.T) {
 				t.Errorf("getServerAddress() got = %v, want %v", got, tt.want)
 			}
 
-			test_helpers.RemoveEnvVar(addrKey)
+			testhelp.RemoveEnvVar(addrKey)
 		})
 	}
 }

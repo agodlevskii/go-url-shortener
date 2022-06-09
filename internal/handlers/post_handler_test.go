@@ -4,7 +4,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go-url-shortener/configs"
 	"go-url-shortener/internal/storage"
-	"go-url-shortener/internal/test_helpers"
+	"go-url-shortener/internal/testhelp"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -164,12 +164,12 @@ func Test_getBaseURL(t *testing.T) {
 		},
 	}
 
-	test_helpers.RemoveEnvVar(baseKey)
+	testhelp.RemoveEnvVar(baseKey)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.args.addr != "" {
-				test_helpers.SetEnvVar(baseKey, tt.args.addr)
+				testhelp.SetEnvVar(baseKey, tt.args.addr)
 			}
 
 			got, err := getBaseURL()
@@ -181,7 +181,7 @@ func Test_getBaseURL(t *testing.T) {
 				t.Errorf("getServerAddress() got = %v, want %v", got, tt.want)
 			}
 
-			test_helpers.RemoveEnvVar(baseKey)
+			testhelp.RemoveEnvVar(baseKey)
 		})
 	}
 }

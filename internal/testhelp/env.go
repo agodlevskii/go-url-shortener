@@ -1,4 +1,4 @@
-package test_helpers
+package testhelp
 
 import (
 	log "github.com/sirupsen/logrus"
