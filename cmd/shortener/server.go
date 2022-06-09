@@ -32,7 +32,6 @@ func main() {
 }
 
 func getRepo() (storage.Storager, error) {
-	os.Setenv(storageFileName, "storage")
 	filename := os.Getenv(storageFileName)
 	if filename == "" {
 		return storage.NewMemoryRepo(), nil
