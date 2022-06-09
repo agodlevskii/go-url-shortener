@@ -8,11 +8,18 @@ import (
 	"os"
 )
 
-const addrKey = "SERVER_ADDRESS"
+const (
+	addrKey         = "SERVER_ADDRESS"
+	storageFileName = "FILE_STORAGE_PATH"
+)
 
 func main() {
-	db := storage.NewMemoryRepo()
-	r := handlers.NewShortenerRouter(db)
+	repo, err := getRepo()
+	if err != nil {
+		log.Error(err)
+	}
+
+	r := handlers.NewShortenerRouter(repo)
 	addr, err := getServerAddress()
 	if err != nil {
 		log.Error(err)
@@ -22,6 +29,16 @@ func main() {
 	if err != nil {
 		log.Error(err)
 	}
+}
+
+func getRepo() (storage.Storager, error) {
+	os.Setenv(storageFileName, "storage")
+	filename := os.Getenv(storageFileName)
+	if filename == "" {
+		return storage.NewMemoryRepo(), nil
+	}
+
+	return storage.NewFileRepo(filename)
 }
 
 func getServerAddress() (string, error) {

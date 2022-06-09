@@ -7,7 +7,7 @@ import (
 
 func RemoveEnvVar(key string) {
 	if _, ok := os.LookupEnv(key); !ok {
-		err := os.Remove(key)
+		err := os.Unsetenv(key)
 		if err != nil {
 			log.Error(err)
 		}

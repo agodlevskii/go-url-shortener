@@ -22,7 +22,7 @@ type PostResponse struct {
 	Result string `json:"result"`
 }
 
-func APIPostHandler(db storage.MemoRepo) func(w http.ResponseWriter, r *http.Request) {
+func APIPostHandler(db storage.Storager) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req PostRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -55,7 +55,7 @@ func APIPostHandler(db storage.MemoRepo) func(w http.ResponseWriter, r *http.Req
 	}
 }
 
-func WebPostHandler(db storage.MemoRepo) func(w http.ResponseWriter, r *http.Request) {
+func WebPostHandler(db storage.Storager) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		b, err := io.ReadAll(r.Body)
 		if err != nil || len(b) == 0 {
@@ -85,7 +85,7 @@ func WebPostHandler(db storage.MemoRepo) func(w http.ResponseWriter, r *http.Req
 	}
 }
 
-func shortenURL(db storage.MemoRepo, uri string) (string, error) {
+func shortenURL(db storage.Storager, uri string) (string, error) {
 	if !validators.IsURLStringValid(uri) {
 		return "", errors.New("you provided an incorrect URL")
 	}

@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func GetFullURL(db storage.MemoRepo) func(w http.ResponseWriter, r *http.Request) {
+func GetFullURL(db storage.Storager) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := chi.URLParam(r, "id")
 		url, err := db.Get(id)

@@ -78,7 +78,7 @@ func TestWebPostHandler(t *testing.T) {
 func TestAPIPostHandler(t *testing.T) {
 	type (
 		args struct {
-			db storage.MemoRepo
+			db storage.Storager
 		}
 		want struct {
 			code        int

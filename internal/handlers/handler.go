@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func NewShortenerRouter(db storage.MemoRepo) *chi.Mux {
+func NewShortenerRouter(db storage.Storager) *chi.Mux {
 	r := chi.NewRouter()
 
 	r.Route("/", func(r chi.Router) {

@@ -5,7 +5,7 @@ import (
 	"go-url-shortener/internal/storage"
 )
 
-func GenerateID(db storage.MemoRepo, size int) (string, error) {
+func GenerateID(db storage.Storager, size int) (string, error) {
 	if size == 0 {
 		size = 7
 	}
