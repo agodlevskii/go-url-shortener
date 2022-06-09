@@ -4,13 +4,15 @@ import (
 	"encoding/json"
 	"errors"
 	log "github.com/sirupsen/logrus"
-	"go-url-shortener/configs"
 	"go-url-shortener/internal/generators"
 	"go-url-shortener/internal/storage"
 	"go-url-shortener/internal/validators"
 	"io"
 	"net/http"
+	"os"
 )
+
+const baseKey = "BASE_URL"
 
 type PostRequest struct {
 	URL string `json:"url"`
@@ -96,6 +98,22 @@ func shortenURL(db storage.MemoRepo, uri string) (string, error) {
 		return "", err
 	}
 
-	res := "http://" + configs.Host + ":" + configs.Port + "/" + id
-	return res, nil
+	baseURL, err := getBaseURL()
+	if err != nil {
+		log.Error(err)
+	}
+
+	return baseURL + "/" + id, nil
+}
+
+func getBaseURL() (string, error) {
+	var err error
+	addr, ok := os.LookupEnv(baseKey)
+
+	if !ok {
+		addr = "http://localhost:8080"
+		err = os.Setenv(baseKey, addr)
+	}
+
+	return addr, err
 }

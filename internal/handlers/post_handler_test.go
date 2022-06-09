@@ -4,6 +4,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go-url-shortener/configs"
 	"go-url-shortener/internal/storage"
+	"go-url-shortener/internal/test_helpers"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -139,6 +140,48 @@ func TestAPIPostHandler(t *testing.T) {
 			}
 
 			defer resp.Body.Close()
+		})
+	}
+}
+
+func Test_getBaseURL(t *testing.T) {
+	tests := []struct {
+		name    string
+		want    string
+		wantErr bool
+		args    struct {
+			addr string
+		}
+	}{
+		{
+			name: "Missing env variable",
+			want: "http://localhost:8080",
+		},
+		{
+			name: "Existing env variable",
+			args: struct{ addr string }{addr: "https://testserver.com"},
+			want: "https://testserver.com",
+		},
+	}
+
+	test_helpers.RemoveEnvVar(baseKey)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.args.addr != "" {
+				test_helpers.SetEnvVar(baseKey, tt.args.addr)
+			}
+
+			got, err := getBaseURL()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("getServerAddress() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("getServerAddress() got = %v, want %v", got, tt.want)
+			}
+
+			test_helpers.RemoveEnvVar(baseKey)
 		})
 	}
 }
