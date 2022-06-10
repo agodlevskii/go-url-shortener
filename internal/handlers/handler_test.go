@@ -54,7 +54,7 @@ func testPostRequest(t *testing.T, ts *httptest.Server, path, data string) (*htt
 }
 
 func TestNewShortenerRouter(t *testing.T) {
-	r := NewShortenerRouter(storage.NewMemoryRepo())
+	r := NewShortenerRouter(storage.NewMemoryRepo(), "https://test.url")
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 

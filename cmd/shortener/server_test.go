@@ -1,48 +1,62 @@
 package main
 
 import (
-	"go-url-shortener/internal/testhelp"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-func Test_getServerAddress(t *testing.T) {
+func Test_setBaseURL(t *testing.T) {
 	tests := []struct {
-		name    string
-		want    string
-		wantErr bool
-		args    struct {
-			addr string
-		}
+		name string
+		val  string
+		want string
 	}{
 		{
-			name: "Missing env variable",
+			name: "Config value is missing",
+			want: "http://localhost:8080",
+		},
+		{
+			name: "Config value is present",
+			val:  "https://base.url",
+			want: "https://base.url",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.val != "" {
+				config.baseURL = tt.val
+			}
+
+			setBaseURL()
+			assert.Equal(t, tt.want, config.baseURL)
+		})
+	}
+}
+
+func Test_setServerAddress(t *testing.T) {
+	tests := []struct {
+		name string
+		val  string
+		want string
+	}{
+		{
+			name: "Config value is missing",
 			want: "localhost:8080",
 		},
 		{
-			name: "Existing env variable",
-			args: struct{ addr string }{addr: "testserver.com"},
-			want: "testserver.com",
+			name: "Config value is present",
+			val:  "base.url",
+			want: "base.url",
 		},
 	}
-
-	testhelp.RemoveEnvVar(addrKey)
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.args.addr != "" {
-				testhelp.SetEnvVar(addrKey, tt.args.addr)
+			if tt.val != "" {
+				config.addr = tt.val
 			}
 
-			got, err := getServerAddress()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("getServerAddress() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("getServerAddress() got = %v, want %v", got, tt.want)
-			}
-
-			testhelp.RemoveEnvVar(addrKey)
+			setServerAddress()
+			assert.Equal(t, tt.want, config.addr)
 		})
 	}
 }

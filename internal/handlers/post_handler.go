@@ -9,10 +9,7 @@ import (
 	"go-url-shortener/internal/validators"
 	"io"
 	"net/http"
-	"os"
 )
-
-const baseKey = "BASE_URL"
 
 type PostRequest struct {
 	URL string `json:"url"`
@@ -22,7 +19,7 @@ type PostResponse struct {
 	Result string `json:"result"`
 }
 
-func APIPostHandler(db storage.Storager) func(w http.ResponseWriter, r *http.Request) {
+func APIPostHandler(db storage.Storager, baseURL string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req PostRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -37,7 +34,7 @@ func APIPostHandler(db storage.Storager) func(w http.ResponseWriter, r *http.Req
 			return
 		}
 
-		shortURI, err := shortenURL(db, uri)
+		shortURI, err := shortenURL(db, uri, baseURL)
 		if err != nil {
 			log.Error(err)
 			http.Error(w, "Couldn't generate the short URL. Please try again later.", http.StatusInternalServerError)
@@ -55,7 +52,7 @@ func APIPostHandler(db storage.Storager) func(w http.ResponseWriter, r *http.Req
 	}
 }
 
-func WebPostHandler(db storage.Storager) func(w http.ResponseWriter, r *http.Request) {
+func WebPostHandler(db storage.Storager, baseURL string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		b, err := io.ReadAll(r.Body)
 		if err != nil || len(b) == 0 {
@@ -69,7 +66,7 @@ func WebPostHandler(db storage.Storager) func(w http.ResponseWriter, r *http.Req
 			return
 		}
 
-		res, err := shortenURL(db, uri)
+		res, err := shortenURL(db, uri, baseURL)
 		if err != nil {
 			log.Error(err)
 			http.Error(w, "Couldn't generate the short URL. Please try again later.", http.StatusInternalServerError)
@@ -85,7 +82,7 @@ func WebPostHandler(db storage.Storager) func(w http.ResponseWriter, r *http.Req
 	}
 }
 
-func shortenURL(db storage.Storager, uri string) (string, error) {
+func shortenURL(db storage.Storager, uri string, baseURL string) (string, error) {
 	if !validators.IsURLStringValid(uri) {
 		return "", errors.New("you provided an incorrect URL")
 	}
@@ -98,22 +95,5 @@ func shortenURL(db storage.Storager, uri string) (string, error) {
 		return "", err
 	}
 
-	baseURL, err := getBaseURL()
-	if err != nil {
-		log.Error(err)
-	}
-
 	return baseURL + "/" + id, nil
-}
-
-func getBaseURL() (string, error) {
-	var err error
-	addr, ok := os.LookupEnv(baseKey)
-
-	if !ok {
-		addr = "http://localhost:8080"
-		err = os.Setenv(baseKey, addr)
-	}
-
-	return addr, err
 }

@@ -6,16 +6,16 @@ import (
 	"net/http"
 )
 
-func NewShortenerRouter(db storage.Storager) *chi.Mux {
+func NewShortenerRouter(db storage.Storager, baseURL string) *chi.Mux {
 	r := chi.NewRouter()
 
 	r.Route("/", func(r chi.Router) {
 		r.Get("/", GetHomePage)
-		r.Post("/", WebPostHandler(db))
+		r.Post("/", WebPostHandler(db, baseURL))
 		r.Get("/{id}", GetFullURL(db))
 
 		r.Route("/api", func(r chi.Router) {
-			r.Post("/shorten", APIPostHandler(db))
+			r.Post("/shorten", APIPostHandler(db, baseURL))
 		})
 
 		r.NotFound(func(writer http.ResponseWriter, request *http.Request) {

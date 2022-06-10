@@ -58,7 +58,7 @@ func TestGetFullURL(t *testing.T) {
 	}
 
 	db := storage.NewMemoryRepo()
-	r := NewShortenerRouter(db)
+	r := NewShortenerRouter(db, "https://test.url")
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
