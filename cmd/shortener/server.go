@@ -41,8 +41,9 @@ func init() {
 	flag.StringVar(&config.baseURL, "b", "", "The application server port")
 	flag.StringVar(&config.filename, "f", "", "The file storage name")
 
-	setServerAddress()
 	setBaseURL()
+	setFilename()
+	setServerAddress()
 }
 
 func getRepo() (storage.Storager, error) {
