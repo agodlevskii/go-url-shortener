@@ -60,3 +60,31 @@ func Test_setServerAddress(t *testing.T) {
 		})
 	}
 }
+
+func Test_setFilename(t *testing.T) {
+	tests := []struct {
+		name string
+		val  string
+		want string
+	}{
+		{
+			name: "Config value is missing",
+			want: "",
+		},
+		{
+			name: "Config value is present",
+			val:  "teststorage",
+			want: "teststorage",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.val != "" {
+				config.filename = tt.val
+			}
+
+			setFilename()
+			assert.Equal(t, tt.want, config.filename)
+		})
+	}
+}

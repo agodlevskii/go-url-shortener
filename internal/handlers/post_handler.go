@@ -37,7 +37,7 @@ func APIPostHandler(db storage.Storager, baseURL string) func(w http.ResponseWri
 		shortURI, err := shortenURL(db, uri, baseURL)
 		if err != nil {
 			log.Error(err)
-			http.Error(w, "Couldn't generate the short URL. Please try again later. "+err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Couldn't generate the short URL. Please try again later.", http.StatusInternalServerError)
 			return
 		}
 
@@ -69,7 +69,7 @@ func WebPostHandler(db storage.Storager, baseURL string) func(w http.ResponseWri
 		res, err := shortenURL(db, uri, baseURL)
 		if err != nil {
 			log.Error(err)
-			http.Error(w, "Couldn't generate the short URL. Please try again later. "+err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Couldn't generate the short URL. Please try again later.", http.StatusInternalServerError)
 			return
 		}
 

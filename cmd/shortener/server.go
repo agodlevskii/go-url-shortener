@@ -46,7 +46,7 @@ func init() {
 }
 
 func getRepo() (storage.Storager, error) {
-	if config.filename == "" && os.Getenv(storageFileName) == "" {
+	if config.filename == "" {
 		return storage.NewMemoryRepo(), nil
 	}
 
@@ -64,6 +64,13 @@ func setBaseURL() {
 	}
 
 	config.baseURL = baseURL
+}
+
+func setFilename() {
+	if config.filename != "" {
+		return
+	}
+	config.filename = os.Getenv(storageFileName)
 }
 
 func setServerAddress() {
