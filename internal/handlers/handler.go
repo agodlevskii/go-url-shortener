@@ -15,7 +15,7 @@ const compressFormat = "gzip"
 
 func NewShortenerRouter(db storage.Storager, baseURL string) *chi.Mux {
 	r := chi.NewRouter()
-	r.Use(compress)
+	r.Use(compress, decompress)
 
 	r.Route("/", func(r chi.Router) {
 		r.Get("/", GetHomePage)
@@ -36,8 +36,8 @@ func NewShortenerRouter(db storage.Storager, baseURL string) *chi.Mux {
 
 func compress(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		enc := w.Header().Get("Accept-Encoding")
-		size := w.Header().Get("Content-Length")
+		enc := r.Header.Get("Accept-Encoding")
+		size := r.Header.Get("Content-Length")
 		sizeInt, err := strconv.Atoi(size)
 		if err != nil {
 			sizeInt = 0
@@ -62,5 +62,24 @@ func compress(next http.Handler) http.Handler {
 
 		w.Header().Set("Content-Encoding", compressFormat)
 		next.ServeHTTP(gzWriter, r)
+	})
+}
+
+func decompress(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Content-Encoding") != "gzip" {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		gz, err := gzip.NewReader(r.Body)
+		if err != nil {
+			io.WriteString(w, err.Error())
+			return
+		}
+		defer gz.Close()
+		r.Body = gz
+
+		next.ServeHTTP(w, r)
 	})
 }
