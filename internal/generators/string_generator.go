@@ -1,15 +1,16 @@
 package generators
 
 import (
+	"errors"
 	"math/rand"
 	"time"
 )
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-func GenerateString(size int) string {
+func GenerateString(size int) (string, error) {
 	if size == 0 {
-		size = 7
+		return "", errors.New("missing random string size")
 	}
 
 	r := newRandom()
@@ -17,7 +18,7 @@ func GenerateString(size int) string {
 	for i := range b {
 		b[i] = letterBytes[r.Intn(len(letterBytes))]
 	}
-	return string(b)
+	return string(b), nil
 }
 
 func newRandom() *rand.Rand {

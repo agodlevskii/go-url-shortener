@@ -1,27 +1,30 @@
 package handlers
 
 import (
-	"errors"
+	"compress/gzip"
 	"github.com/go-chi/chi/v5"
-	log "github.com/sirupsen/logrus"
-	"go-url-shortener/configs"
-	"go-url-shortener/internal/generators"
+	"go-url-shortener/internal/respwriters"
 	"go-url-shortener/internal/storage"
-	"go-url-shortener/internal/validators"
-	"html/template"
 	"io"
 	"net/http"
+	"strconv"
+	"strings"
 )
 
-var db = storage.NewMemoryRepo()
+const compressFormat = "gzip"
 
-func NewShortenerRouter() *chi.Mux {
+func NewShortenerRouter(db storage.Storager, baseURL string) *chi.Mux {
 	r := chi.NewRouter()
+	r.Use(compress, decompress)
 
 	r.Route("/", func(r chi.Router) {
-		r.Post("/", ShortenURL)
 		r.Get("/", GetHomePage)
-		r.Get("/{id}", GetFullURL)
+		r.Post("/", WebPostHandler(db, baseURL))
+		r.Get("/{id}", GetFullURL(db))
+
+		r.Route("/api", func(r chi.Router) {
+			r.Post("/shorten", APIPostHandler(db, baseURL))
+		})
 
 		r.NotFound(func(writer http.ResponseWriter, request *http.Request) {
 			http.Error(writer, "This HTTP method is not allowed.", http.StatusMethodNotAllowed)
@@ -31,68 +34,52 @@ func NewShortenerRouter() *chi.Mux {
 	return r
 }
 
-func GetHomePage(w http.ResponseWriter, _ *http.Request) {
-	tmpl, err := template.ParseFiles("templates/index.html")
-	if err != nil {
-		log.Error(err)
-		http.Error(w, "Something went wrong. Please, try again later.", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	tmpl.Execute(w, nil)
-}
-
-func GetFullURL(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
-	url, err := storage.GetURLFromStorage(db, id)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
-}
-
-func ShortenURL(w http.ResponseWriter, r *http.Request) {
-	b, err := io.ReadAll(r.Body)
-	if err != nil || len(b) == 0 {
-		http.Error(w, "The original URL is missing. Please attach it to the request body.", http.StatusBadRequest)
-		return
-	}
-
-	uri := string(b)
-	if !validators.IsURLStringValid(uri) {
-		http.Error(w, "You provided an incorrect URL.", http.StatusBadRequest)
-		return
-	}
-
-	id, err := generateID()
-	if err != nil {
-		log.Error(err)
-		http.Error(w, "Couldn't generate the short URL. Please try again later.", http.StatusInternalServerError)
-		return
-	}
-
-	storage.AddURLToStorage(db, id, uri)
-	res := "http://" + configs.Host + ":" + configs.Port + "/" + id
-
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte(res))
-}
-
-func generateID() (string, error) {
-	id := generators.GenerateString(7)
-
-	for step := 1; step < 10; step++ {
-		if !db.Has(id) {
-			return id, nil
+func compress(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		enc := r.Header.Get("Accept-Encoding")
+		size := r.Header.Get("Content-Length")
+		sizeInt, err := strconv.Atoi(size)
+		if err != nil {
+			sizeInt = 0
 		}
 
-		id = generators.GenerateString(7)
-	}
+		if !strings.Contains(enc, compressFormat) || sizeInt < 1400 {
+			next.ServeHTTP(w, r)
+			return
+		}
 
-	return "", errors.New("couldn't generate ID")
+		gz, err := gzip.NewWriterLevel(w, gzip.BestCompression)
+		if err != nil {
+			io.WriteString(w, err.Error())
+			return
+		}
+		defer gz.Close()
+
+		gzWriter := respwriters.GzipWriter{
+			ResponseWriter: w,
+			Writer:         gz,
+		}
+
+		w.Header().Set("Content-Encoding", compressFormat)
+		next.ServeHTTP(gzWriter, r)
+	})
+}
+
+func decompress(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Content-Encoding") != "gzip" {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		gz, err := gzip.NewReader(r.Body)
+		if err != nil {
+			io.WriteString(w, err.Error())
+			return
+		}
+		defer gz.Close()
+		r.Body = gz
+
+		next.ServeHTTP(w, r)
+	})
 }

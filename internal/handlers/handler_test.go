@@ -5,11 +5,10 @@ import (
 	"errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go-url-shortener/configs"
+	"go-url-shortener/internal/storage"
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
 )
@@ -35,7 +34,12 @@ func testRequest(t *testing.T, ts *httptest.Server, method, path, data string) (
 	respBody, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			t.Error(err)
+		}
+	}(resp.Body)
 
 	return resp, strings.TrimSpace(string(respBody))
 }
@@ -49,7 +53,7 @@ func testPostRequest(t *testing.T, ts *httptest.Server, path, data string) (*htt
 }
 
 func TestNewShortenerRouter(t *testing.T) {
-	r := NewShortenerRouter()
+	r := NewShortenerRouter(storage.NewMemoryRepo(), "https://test.url")
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
@@ -58,153 +62,4 @@ func TestNewShortenerRouter(t *testing.T) {
 	assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
 
 	defer resp.Body.Close()
-}
-
-func TestShortenUrl(t *testing.T) {
-	type (
-		want struct {
-			code        int
-			resp        string
-			contentType string
-		}
-		testCase struct {
-			name         string
-			data         string
-			checkInclude bool
-			want         want
-		}
-	)
-
-	tests := []testCase{
-		{
-			name: "Missing body",
-			want: want{
-				code:        http.StatusBadRequest,
-				resp:        "The original URL is missing. Please attach it to the request body.",
-				contentType: "text/plain; charset=utf-8",
-			},
-		},
-		{
-			name: "Empty body",
-			want: want{
-				code:        http.StatusBadRequest,
-				resp:        "The original URL is missing. Please attach it to the request body.",
-				contentType: "text/plain; charset=utf-8",
-			},
-		},
-		{
-			name:         "Correct body",
-			data:         "https://google.com",
-			checkInclude: true,
-			want: want{
-				code:        http.StatusCreated,
-				resp:        "http://" + configs.Host + ":" + configs.Port,
-				contentType: "text/plain; charset=utf-8",
-			},
-		},
-	}
-
-	r := NewShortenerRouter()
-	ts := httptest.NewServer(r)
-	defer ts.Close()
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			resp, body := testPostRequest(t, ts, "/", tt.data)
-			assert.Equal(t, tt.want.code, resp.StatusCode)
-			assert.Equal(t, tt.want.contentType, resp.Header.Get("Content-Type"))
-
-			if tt.checkInclude {
-				assert.Contains(t, body, tt.want.resp)
-			} else {
-				assert.Equal(t, tt.want.resp, body)
-			}
-
-			defer resp.Body.Close()
-		})
-	}
-}
-
-func TestShortenerGetHandler(t *testing.T) {
-	type (
-		want struct {
-			code        int
-			resp        string
-			contentType string
-			location    string
-		}
-		testCase struct {
-			name    string
-			want    want
-			id      string
-			storage map[string]string
-		}
-	)
-
-	tests := []testCase{
-		{
-			name: "No ID query parameter",
-			id:   "",
-			want: want{
-				code:        http.StatusOK,
-				contentType: "text/html; charset=utf-8",
-			},
-		},
-		{
-			name: "Incorrect ID parameter value",
-			id:   "foo",
-			want: want{
-				code:        http.StatusBadRequest,
-				resp:        "no matching URL found",
-				contentType: "text/plain; charset=utf-8",
-			},
-		},
-		{
-			name:    "Correct ID parameter value",
-			id:      "googl",
-			storage: map[string]string{"googl": "https://google.com"},
-			want: want{
-				code:        http.StatusTemporaryRedirect,
-				resp:        `https://google.com`,
-				contentType: "text/html; charset=utf-8",
-				location:    "https://google.com",
-			},
-		},
-	}
-
-	r := NewShortenerRouter()
-	ts := httptest.NewServer(r)
-	defer ts.Close()
-
-	os.Chdir("../../")
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if len(tt.storage) > 0 {
-				for k, v := range tt.storage {
-					db.Add(k, v)
-				}
-			}
-
-			path := "/"
-			if tt.id != "" {
-				path = path + tt.id
-			}
-
-			resp, body := testGetRequest(t, ts, path)
-			assert.Equal(t, tt.want.code, resp.StatusCode)
-			assert.Equal(t, tt.want.contentType, resp.Header.Get("Content-Type"))
-			assert.Equal(t, tt.want.location, resp.Header.Get("Location"))
-
-			if tt.want.resp != "" {
-				assert.Contains(t, body, tt.want.resp)
-			}
-
-			defer resp.Body.Close()
-
-			if len(tt.storage) > 0 {
-				db.Clear()
-			}
-		})
-	}
 }
