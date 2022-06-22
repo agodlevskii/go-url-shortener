@@ -23,9 +23,9 @@ func TestGenerateID(t *testing.T) {
 			want: 3,
 		},
 		{
-			name: "Undefined size",
-			args: args{db: storage.NewMemoryRepo(), size: 0},
-			want: 7,
+			name:    "Undefined size",
+			args:    args{db: storage.NewMemoryRepo(), size: 0},
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
@@ -33,7 +33,7 @@ func TestGenerateID(t *testing.T) {
 			res, err := GenerateID(tt.args.db, tt.args.size)
 			got := len(res)
 			assert.Equalf(t, tt.want, got, "generateID(%v)", tt.args.db, tt.args.size)
-			assert.Equal(t, tt.wantErr, err == nil)
+			assert.Equal(t, tt.wantErr, err != nil)
 		})
 	}
 }

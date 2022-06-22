@@ -143,7 +143,7 @@ func TestMemoRepo_Has(t *testing.T) {
 			has, err := m.Has(tt.args.id)
 
 			assert.Equal(t, tt.want, has)
-			assert.Equal(t, tt.wantErr, err == nil)
+			assert.Equal(t, tt.wantErr, err != nil)
 		})
 	}
 }
@@ -242,12 +242,12 @@ func TestFileRepo_Clear(t *testing.T) {
 			f.Add("googl", "https://google.com")
 			has, err := f.Has("googl")
 			assert.Equal(t, true, has)
-			assert.Equal(t, false, err == nil)
+			assert.Equal(t, false, err != nil)
 
 			f.Clear()
 			has, err = f.Has("googl")
 			assert.Equal(t, false, has)
-			assert.Equal(t, false, err == nil)
+			assert.Equal(t, false, err != nil)
 		})
 	}
 }
@@ -345,7 +345,7 @@ func TestFileRepo_Has(t *testing.T) {
 
 			has, err := f.Has(tt.args.id)
 			assert.Equal(t, tt.want, has)
-			assert.Equal(t, tt.wantErr, err == nil)
+			assert.Equal(t, tt.wantErr, err != nil)
 
 			if len(tt.data) > 0 {
 				f.Clear()
