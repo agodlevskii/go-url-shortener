@@ -7,16 +7,23 @@ import (
 
 func GenerateID(db storage.Storager, size int) (string, error) {
 	if size == 0 {
-		size = 7
+		return "", errors.New("missing ID size")
 	}
 
-	id := GenerateString(size)
-
 	for step := 1; step < 10; step++ {
-		if !db.Has(id) {
+		id, err := GenerateString(size)
+		if err != nil {
+			return "", err
+		}
+
+		has, err := db.Has(id)
+		if err != nil {
+			return "", err
+		}
+
+		if !has {
 			return id, nil
 		}
-		id = GenerateString(size)
 	}
 
 	return "", errors.New("couldn't generate ID")

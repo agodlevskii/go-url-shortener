@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"go-url-shortener/internal/storage"
 	"net/http"
@@ -64,7 +63,7 @@ func TestGetFullURL(t *testing.T) {
 
 	err := os.Chdir("../../")
 	if err != nil {
-		log.Error(err)
+		t.Error(err)
 	}
 
 	for _, tt := range tests {
@@ -73,7 +72,7 @@ func TestGetFullURL(t *testing.T) {
 				for k, v := range tt.storage {
 					err := db.Add(k, v)
 					if err != nil {
-						log.Error(err)
+						t.Error(err)
 					}
 				}
 			}

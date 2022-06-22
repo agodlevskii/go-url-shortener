@@ -15,7 +15,7 @@ func TestGenerateID(t *testing.T) {
 		name    string
 		args    args
 		want    int
-		wantErr assert.ErrorAssertionFunc
+		wantErr bool
 	}{
 		{
 			name: "Defined size",
@@ -30,9 +30,10 @@ func TestGenerateID(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			res, _ := GenerateID(tt.args.db, tt.args.size)
+			res, err := GenerateID(tt.args.db, tt.args.size)
 			got := len(res)
 			assert.Equalf(t, tt.want, got, "generateID(%v)", tt.args.db, tt.args.size)
+			assert.Equal(t, tt.wantErr, err == nil)
 		})
 	}
 }

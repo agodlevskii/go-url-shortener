@@ -3,7 +3,6 @@ package handlers
 import (
 	"bytes"
 	"errors"
-	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go-url-shortener/internal/storage"
@@ -38,7 +37,7 @@ func testRequest(t *testing.T, ts *httptest.Server, method, path, data string) (
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
-			log.Error(err)
+			t.Error(err)
 		}
 	}(resp.Body)
 

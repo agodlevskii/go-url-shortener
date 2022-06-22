@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func Test_setBaseURL(t *testing.T) {
+func TestSetBaseURL(t *testing.T) {
 	tests := []struct {
 		name string
 		val  string
@@ -33,7 +33,7 @@ func Test_setBaseURL(t *testing.T) {
 	}
 }
 
-func Test_setServerAddress(t *testing.T) {
+func TestSetServerAddress(t *testing.T) {
 	tests := []struct {
 		name string
 		val  string
@@ -61,7 +61,7 @@ func Test_setServerAddress(t *testing.T) {
 	}
 }
 
-func Test_setFilename(t *testing.T) {
+func TestSetFilename(t *testing.T) {
 	tests := []struct {
 		name string
 		val  string

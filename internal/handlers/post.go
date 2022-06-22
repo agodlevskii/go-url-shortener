@@ -43,7 +43,7 @@ func APIPostHandler(db storage.Storager, baseURL string) func(w http.ResponseWri
 
 		res := PostResponse{Result: shortURI}
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(201)
+		w.WriteHeader(http.StatusCreated)
 
 		err = json.NewEncoder(w).Encode(res)
 		if err != nil {

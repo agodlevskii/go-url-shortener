@@ -16,30 +16,30 @@ const (
 )
 
 var config struct {
-	addr     string
-	baseURL  string
-	filename string
+	addr     string `env:"SERVER_ADDRESS"`
+	baseURL  string `env:"BASE_URL"`
+	filename string `env:"FILE_STORAGE_PATH"`
 }
 
 func main() {
 	flag.Parse()
 	repo, err := getRepo()
 	if err != nil {
-		log.Error(err)
+		log.Fatal(err)
 	}
 
 	r := handlers.NewShortenerRouter(repo, config.baseURL)
 
 	err = http.ListenAndServe(config.addr, r)
 	if err != nil {
-		log.Error(err)
+		log.Fatal(err)
 	}
 }
 
 func init() {
-	flag.StringVar(&config.addr, "a", "", "The application server address")
-	flag.StringVar(&config.baseURL, "b", "", "The application server port")
-	flag.StringVar(&config.filename, "f", "", "The file storage name")
+	flag.StringVar(&config.addr, "a", config.addr, "The application server address")
+	flag.StringVar(&config.baseURL, "b", config.baseURL, "The application server port")
+	flag.StringVar(&config.filename, "f", config.filename, "The file storage name")
 
 	setBaseURL()
 	setFilename()

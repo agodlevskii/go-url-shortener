@@ -10,7 +10,7 @@ import (
 
 type Storager interface {
 	Add(id, val string) error
-	Has(string) bool
+	Has(string) (bool, error)
 	Get(string) (string, error)
 	Clear()
 }
@@ -28,13 +28,18 @@ func (m MemoRepo) Add(id string, url string) error {
 	return nil
 }
 
-func (m MemoRepo) Has(id string) bool {
+func (m MemoRepo) Has(id string) (bool, error) {
 	_, ok := m.db[id]
-	return ok
+	return ok, nil
 }
 
 func (m MemoRepo) Get(id string) (string, error) {
-	if m.Has(id) {
+	has, err := m.Has(id)
+	if err != nil {
+		return "", err
+	}
+
+	if has {
 		return m.db[id], nil
 	}
 
@@ -109,13 +114,23 @@ func (f FileRepo) Get(id string) (string, error) {
 	return "", errors.New("no matching URL found")
 }
 
-func (f FileRepo) Has(id string) bool {
+func (f FileRepo) Has(id string) (bool, error) {
 	file, err := os.OpenFile(f.filename, os.O_RDONLY|os.O_CREATE, 0777)
 	if err != nil {
 		log.Error(err)
-		return false
+		return false, err
 	}
 	defer file.Close()
+
+	stat, err := file.Stat()
+	if err != nil {
+		log.Error(err)
+		return false, err
+	}
+
+	if stat.Size() == 0 {
+		return false, nil
+	}
 
 	scanner := bufio.NewScanner(file)
 	counter := 0
@@ -123,15 +138,15 @@ func (f FileRepo) Has(id string) bool {
 	for ; scanner.Scan(); counter++ {
 		data := strings.Split(scanner.Text(), " : ")
 		if len(data) < 2 {
-			return false
+			return false, nil
 		}
 
 		if data[0] == id {
-			return true
+			return true, nil
 		}
 	}
 
-	return false
+	return false, nil
 }
 
 func (f FileRepo) Clear() {
