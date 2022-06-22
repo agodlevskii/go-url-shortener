@@ -115,10 +115,11 @@ func TestMemoRepo_Has(t *testing.T) {
 		id string
 	}
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   bool
+		name    string
+		fields  fields
+		args    args
+		want    bool
+		wantErr bool
 	}{
 		{
 			name:   "Missing ID",
@@ -139,7 +140,10 @@ func TestMemoRepo_Has(t *testing.T) {
 				db: tt.fields.db,
 			}
 
-			assert.Equal(t, tt.want, m.Has(tt.args.id))
+			has, err := m.Has(tt.args.id)
+
+			assert.Equal(t, tt.want, has)
+			assert.Equal(t, tt.wantErr, err == nil)
 		})
 	}
 }
@@ -236,10 +240,14 @@ func TestFileRepo_Clear(t *testing.T) {
 			}
 
 			f.Add("googl", "https://google.com")
-			assert.Equal(t, true, f.Has("googl"))
+			has, err := f.Has("googl")
+			assert.Equal(t, true, has)
+			assert.Equal(t, false, err == nil)
 
 			f.Clear()
-			assert.Equal(t, false, f.Has("googl"))
+			has, err = f.Has("googl")
+			assert.Equal(t, false, has)
+			assert.Equal(t, false, err == nil)
 		})
 	}
 }
@@ -304,11 +312,12 @@ func TestFileRepo_Has(t *testing.T) {
 		id string
 	}
 	tests := []struct {
-		name   string
-		fields fields
-		data   map[string]string
-		args   args
-		want   bool
+		name    string
+		fields  fields
+		data    map[string]string
+		args    args
+		want    bool
+		wantErr bool
 	}{
 		{
 			name:   "Missing ID",
@@ -334,7 +343,9 @@ func TestFileRepo_Has(t *testing.T) {
 				f.Add(k, v)
 			}
 
-			assert.Equalf(t, tt.want, f.Has(tt.args.id), "Has(%v)", tt.args.id)
+			has, err := f.Has(tt.args.id)
+			assert.Equal(t, tt.want, has)
+			assert.Equal(t, tt.wantErr, err == nil)
 
 			if len(tt.data) > 0 {
 				f.Clear()
