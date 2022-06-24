@@ -5,9 +5,11 @@ import (
 	"testing"
 )
 
+var UserId = "7190e4d4-fd9c-4b"
+
 func TestMemoRepo_Add(t *testing.T) {
 	type fields struct {
-		db map[string]string
+		db map[string]map[string]string
 	}
 	type args struct {
 		id  string
@@ -25,7 +27,7 @@ func TestMemoRepo_Add(t *testing.T) {
 				id:  "googl",
 				url: "https://google.com",
 			},
-			fields:  fields{db: map[string]string{}},
+			fields:  fields{db: map[string]map[string]string{}},
 			wantErr: false,
 		},
 	}
@@ -35,7 +37,7 @@ func TestMemoRepo_Add(t *testing.T) {
 				db: tt.fields.db,
 			}
 
-			err := m.Add(tt.args.id, tt.args.url)
+			err := m.Add(UserId, tt.args.id, tt.args.url)
 			assert.Equal(t, tt.wantErr, err != nil)
 		})
 	}
@@ -43,15 +45,17 @@ func TestMemoRepo_Add(t *testing.T) {
 
 func TestMemoRepo_Clear(t *testing.T) {
 	type fields struct {
-		db map[string]string
+		db map[string]map[string]string
 	}
 	tests := []struct {
 		name   string
 		fields fields
 	}{
 		{
-			name:   "Correct clean",
-			fields: fields{db: map[string]string{"googl": "https://google.com"}},
+			name: "Correct clean",
+			fields: fields{db: map[string]map[string]string{
+				UserId: {"googl": "https://google.com"},
+			}},
 		},
 	}
 	for _, tt := range tests {
@@ -68,7 +72,7 @@ func TestMemoRepo_Clear(t *testing.T) {
 
 func TestMemoRepo_Get(t *testing.T) {
 	type fields struct {
-		db map[string]string
+		db map[string]map[string]string
 	}
 	type args struct {
 		id string
@@ -81,14 +85,18 @@ func TestMemoRepo_Get(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "Missing ID",
-			fields:  fields{db: map[string]string{"googl": "https://google.com"}},
+			name: "Missing ID",
+			fields: fields{db: map[string]map[string]string{
+				UserId: {"googl": "https://google.com"},
+			}},
 			args:    args{id: "foo"},
 			wantErr: true,
 		},
 		{
-			name:    "Existing ID",
-			fields:  fields{db: map[string]string{"googl": "https://google.com"}},
+			name: "Existing ID",
+			fields: fields{db: map[string]map[string]string{
+				UserId: {"googl": "https://google.com"},
+			}},
 			args:    args{id: "googl"},
 			want:    "https://google.com",
 			wantErr: false,
@@ -99,7 +107,7 @@ func TestMemoRepo_Get(t *testing.T) {
 			m := MemoRepo{
 				db: tt.fields.db,
 			}
-			url, err := m.Get(tt.args.id)
+			url, err := m.Get(UserId, tt.args.id)
 
 			assert.Equal(t, tt.wantErr, err != nil)
 			assert.Equal(t, tt.want, url)
@@ -109,7 +117,7 @@ func TestMemoRepo_Get(t *testing.T) {
 
 func TestMemoRepo_Has(t *testing.T) {
 	type fields struct {
-		db map[string]string
+		db map[string]map[string]string
 	}
 	type args struct {
 		id string
@@ -122,16 +130,20 @@ func TestMemoRepo_Has(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:   "Missing ID",
-			fields: fields{db: map[string]string{"googl": "https://google.com"}},
-			args:   args{id: "foo"},
-			want:   false,
+			name: "Missing ID",
+			fields: fields{db: map[string]map[string]string{
+				UserId: {"googl": "https://google.com"},
+			}},
+			args: args{id: "foo"},
+			want: false,
 		},
 		{
-			name:   "Existing ID",
-			fields: fields{db: map[string]string{"googl": "https://google.com"}},
-			args:   args{id: "googl"},
-			want:   true,
+			name: "Existing ID",
+			fields: fields{db: map[string]map[string]string{
+				UserId: {"googl": "https://google.com"},
+			}},
+			args: args{id: "googl"},
+			want: true,
 		},
 	}
 	for _, tt := range tests {
@@ -140,7 +152,7 @@ func TestMemoRepo_Has(t *testing.T) {
 				db: tt.fields.db,
 			}
 
-			has, err := m.Has(tt.args.id)
+			has, err := m.Has(UserId, tt.args.id)
 
 			assert.Equal(t, tt.want, has)
 			assert.Equal(t, tt.wantErr, err != nil)
@@ -212,7 +224,7 @@ func TestFileRepo_Add(t *testing.T) {
 				filename: tt.fields.filename,
 			}
 
-			err := f.Add(tt.args.id, tt.args.url)
+			err := f.Add(UserId, tt.args.id, tt.args.url)
 			assert.Equal(t, tt.wantErr, err != nil)
 
 			f.Clear()
@@ -239,13 +251,13 @@ func TestFileRepo_Clear(t *testing.T) {
 				filename: tt.fields.filename,
 			}
 
-			f.Add("googl", "https://google.com")
-			has, err := f.Has("googl")
+			f.Add(UserId, "googl", "https://google.com")
+			has, err := f.Has(UserId, "googl")
 			assert.Equal(t, true, has)
 			assert.Equal(t, false, err != nil)
 
 			f.Clear()
-			has, err = f.Has("googl")
+			has, err = f.Has(UserId, "googl")
 			assert.Equal(t, false, has)
 			assert.Equal(t, false, err != nil)
 		})
@@ -264,20 +276,24 @@ func TestFileRepo_Get(t *testing.T) {
 		fields  fields
 		args    args
 		want    string
-		data    map[string]string
+		data    map[string]map[string]string
 		wantErr bool
 	}{
 		{
-			name:    "Missing ID",
-			fields:  fields{filename: "testfile"},
-			data:    map[string]string{"googl": "https://google.com"},
+			name:   "Missing ID",
+			fields: fields{filename: "testfile"},
+			data: map[string]map[string]string{
+				UserId: {"googl": "https://google.com"},
+			},
 			args:    args{id: "foo"},
 			wantErr: true,
 		},
 		{
-			name:    "Existing ID",
-			fields:  fields{filename: "testfile"},
-			data:    map[string]string{"googl": "https://google.com"},
+			name:   "Existing ID",
+			fields: fields{filename: "testfile"},
+			data: map[string]map[string]string{
+				UserId: {"googl": "https://google.com"},
+			},
 			args:    args{id: "googl"},
 			want:    "https://google.com",
 			wantErr: false,
@@ -289,11 +305,13 @@ func TestFileRepo_Get(t *testing.T) {
 				filename: tt.fields.filename,
 			}
 
-			for k, v := range tt.data {
-				f.Add(k, v)
+			for _, urls := range tt.data {
+				for id, url := range urls {
+					f.Add(UserId, id, url)
+				}
 			}
 
-			got, err := f.Get(tt.args.id)
+			got, err := f.Get(UserId, tt.args.id)
 			assert.Equal(t, tt.wantErr, err != nil)
 			assert.Equalf(t, tt.want, got, "Get(%v)", tt.args.id)
 
@@ -314,7 +332,7 @@ func TestFileRepo_Has(t *testing.T) {
 	tests := []struct {
 		name    string
 		fields  fields
-		data    map[string]string
+		data    map[string]map[string]string
 		args    args
 		want    bool
 		wantErr bool
@@ -328,9 +346,11 @@ func TestFileRepo_Has(t *testing.T) {
 		{
 			name:   "Existing ID",
 			fields: fields{filename: "testfile"},
-			data:   map[string]string{"googl": "https://google.com"},
-			args:   args{id: "googl"},
-			want:   true,
+			data: map[string]map[string]string{
+				UserId: {"googl": "https://google.com"},
+			},
+			args: args{id: "googl"},
+			want: true,
 		},
 	}
 	for _, tt := range tests {
@@ -339,11 +359,13 @@ func TestFileRepo_Has(t *testing.T) {
 				filename: tt.fields.filename,
 			}
 
-			for k, v := range tt.data {
-				f.Add(k, v)
+			for _, urls := range tt.data {
+				for id, url := range urls {
+					f.Add(UserId, id, url)
+				}
 			}
 
-			has, err := f.Has(tt.args.id)
+			has, err := f.Has(UserId, tt.args.id)
 			assert.Equal(t, tt.want, has)
 			assert.Equal(t, tt.wantErr, err != nil)
 

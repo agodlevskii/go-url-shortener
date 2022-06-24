@@ -50,7 +50,6 @@ func getRepo() (storage.Storager, error) {
 	if config.filename == "" {
 		return storage.NewMemoryRepo(), nil
 	}
-
 	return storage.NewFileRepo(config.filename)
 }
 

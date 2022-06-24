@@ -21,7 +21,7 @@ func TestGetFullURL(t *testing.T) {
 			name    string
 			want    want
 			id      string
-			storage map[string]string
+			storage map[string]map[string]string
 		}
 	)
 
@@ -44,9 +44,11 @@ func TestGetFullURL(t *testing.T) {
 			},
 		},
 		{
-			name:    "Correct ID parameter value",
-			id:      "googl",
-			storage: map[string]string{"googl": "https://google.com"},
+			name: "Correct ID parameter value",
+			id:   "googl",
+			storage: map[string]map[string]string{
+				UserId: {"googl": "https://google.com"},
+			},
 			want: want{
 				code:        http.StatusTemporaryRedirect,
 				resp:        `https://google.com`,
@@ -69,10 +71,12 @@ func TestGetFullURL(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if len(tt.storage) > 0 {
-				for k, v := range tt.storage {
-					err := db.Add(k, v)
-					if err != nil {
-						t.Error(err)
+				for uid, urls := range tt.storage {
+					for id, url := range urls {
+						err := db.Add(uid, id, url)
+						if err != nil {
+							t.Error(err)
+						}
 					}
 				}
 			}

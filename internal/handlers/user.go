@@ -1,0 +1,60 @@
+package handlers
+
+import (
+	"encoding/json"
+	log "github.com/sirupsen/logrus"
+	"go-url-shortener/internal/middlewares"
+	"go-url-shortener/internal/storage"
+	"net/http"
+)
+
+func UserURLsHandler(db storage.Storager, baseUrl string) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userId, err := middlewares.GetUserId(r)
+		if err != nil {
+			log.Error(err)
+			http.Error(w, "couldn't identify the user", http.StatusInternalServerError)
+			return
+		}
+
+		list := getUserLinks(db, userId, baseUrl)
+		if list == nil || len(list) == 0 {
+			w.Header().Set("Content-Type", "text/plain")
+			w.WriteHeader(http.StatusNoContent)
+			w.Write([]byte("No results found."))
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+
+		err = json.NewEncoder(w).Encode(list)
+		if err != nil {
+			log.Error(err)
+			http.Error(w, "please try again later", http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
+func getUserLinks(db storage.Storager, userId, baseUrl string) []UserLink {
+	urls, err := db.GetAll(userId)
+	if err != nil {
+		log.Error(err)
+		return nil
+	}
+
+	if urls == nil || len(urls) == 0 {
+		return nil
+	}
+
+	links := make([]UserLink, 0)
+	for id, url := range urls {
+		links = append(links, UserLink{
+			Short:    baseUrl + "/" + id,
+			Original: url,
+		})
+	}
+
+	return links
+}

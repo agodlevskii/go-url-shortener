@@ -5,6 +5,7 @@ import (
 	"errors"
 	log "github.com/sirupsen/logrus"
 	"go-url-shortener/internal/generators"
+	"go-url-shortener/internal/middlewares"
 	"go-url-shortener/internal/storage"
 	"go-url-shortener/internal/validators"
 	"io"
@@ -17,6 +18,11 @@ type PostRequest struct {
 
 type PostResponse struct {
 	Result string `json:"result"`
+}
+
+type UserLink struct {
+	Short    string `json:"short_url"`
+	Original string `json:"original_url"`
 }
 
 func APIPostHandler(db storage.Storager, baseURL string) func(w http.ResponseWriter, r *http.Request) {
@@ -34,7 +40,13 @@ func APIPostHandler(db storage.Storager, baseURL string) func(w http.ResponseWri
 			return
 		}
 
-		shortURI, err := shortenURL(db, uri, baseURL)
+		userId, err := middlewares.GetUserId(r)
+		if err != nil {
+			http.Error(w, "Cannot identify a user", http.StatusInternalServerError)
+			return
+		}
+
+		shortURI, err := shortenURL(db, userId, uri, baseURL)
 		if err != nil {
 			log.Error(err)
 			http.Error(w, "Couldn't generate the short URL. Please try again later.", http.StatusInternalServerError)
@@ -66,7 +78,13 @@ func WebPostHandler(db storage.Storager, baseURL string) func(w http.ResponseWri
 			return
 		}
 
-		res, err := shortenURL(db, uri, baseURL)
+		userId, err := middlewares.GetUserId(r)
+		if err != nil {
+			http.Error(w, "Cannot identify a user", http.StatusInternalServerError)
+			return
+		}
+
+		res, err := shortenURL(db, userId, uri, baseURL)
 		if err != nil {
 			log.Error(err)
 			http.Error(w, "Couldn't generate the short URL. Please try again later.", http.StatusInternalServerError)
@@ -82,18 +100,19 @@ func WebPostHandler(db storage.Storager, baseURL string) func(w http.ResponseWri
 	}
 }
 
-func shortenURL(db storage.Storager, uri string, baseURL string) (string, error) {
+func shortenURL(db storage.Storager, userId, uri, baseURL string) (string, error) {
 	if !validators.IsURLStringValid(uri) {
 		return "", errors.New("you provided an incorrect URL")
 	}
 
-	id, err := generators.GenerateID(db, 7)
+	id, err := generators.GenerateID(db, userId, 7)
 	if err != nil {
 		return "", err
 	}
-	if err = db.Add(id, uri); err != nil {
+	if err = db.Add(userId, id, uri); err != nil {
 		return "", err
 	}
 
-	return baseURL + "/" + id, nil
+	url := baseURL + "/" + id
+	return url, nil
 }
