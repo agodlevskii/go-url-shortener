@@ -18,7 +18,7 @@ func GetFullURL(db storage.Storager) func(w http.ResponseWriter, r *http.Request
 		}
 
 		id := chi.URLParam(r, "id")
-		url, err := db.Get(userID, id)
+		url, err := db.Get(id)
 		log.Info("userID: ", userID)
 		if err != nil {
 			log.Error(err)

@@ -16,7 +16,7 @@ func GenerateID(db storage.Storager, userID string, size int) (string, error) {
 			return "", err
 		}
 
-		has, err := db.Has(userID, id)
+		has, err := db.Has(id)
 		if err != nil {
 			return "", err
 		}

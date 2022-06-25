@@ -9,7 +9,7 @@ var UserID = "7190e4d4-fd9c-4b"
 
 func TestMemoRepo_Add(t *testing.T) {
 	type fields struct {
-		db map[string]map[string]string
+		db map[string]UrlRes
 	}
 	type args struct {
 		id  string
@@ -27,7 +27,7 @@ func TestMemoRepo_Add(t *testing.T) {
 				id:  "googl",
 				url: "https://google.com",
 			},
-			fields:  fields{db: map[string]map[string]string{}},
+			fields:  fields{db: map[string]UrlRes{}},
 			wantErr: false,
 		},
 	}
@@ -45,7 +45,7 @@ func TestMemoRepo_Add(t *testing.T) {
 
 func TestMemoRepo_Clear(t *testing.T) {
 	type fields struct {
-		db map[string]map[string]string
+		db map[string]UrlRes
 	}
 	tests := []struct {
 		name   string
@@ -53,8 +53,11 @@ func TestMemoRepo_Clear(t *testing.T) {
 	}{
 		{
 			name: "Correct clean",
-			fields: fields{db: map[string]map[string]string{
-				UserID: {"googl": "https://google.com"},
+			fields: fields{db: map[string]UrlRes{
+				"googl": {
+					url: "https://google.com",
+					uid: UserID,
+				},
 			}},
 		},
 	}
@@ -72,7 +75,7 @@ func TestMemoRepo_Clear(t *testing.T) {
 
 func TestMemoRepo_Get(t *testing.T) {
 	type fields struct {
-		db map[string]map[string]string
+		db map[string]UrlRes
 	}
 	type args struct {
 		id string
@@ -86,16 +89,22 @@ func TestMemoRepo_Get(t *testing.T) {
 	}{
 		{
 			name: "Missing ID",
-			fields: fields{db: map[string]map[string]string{
-				UserID: {"googl": "https://google.com"},
+			fields: fields{db: map[string]UrlRes{
+				"googl": {
+					url: "https://google.com",
+					uid: UserID,
+				},
 			}},
 			args:    args{id: "foo"},
 			wantErr: true,
 		},
 		{
 			name: "Existing ID",
-			fields: fields{db: map[string]map[string]string{
-				UserID: {"googl": "https://google.com"},
+			fields: fields{db: map[string]UrlRes{
+				"googl": {
+					url: "https://google.com",
+					uid: UserID,
+				},
 			}},
 			args:    args{id: "googl"},
 			want:    "https://google.com",
@@ -107,7 +116,7 @@ func TestMemoRepo_Get(t *testing.T) {
 			m := MemoRepo{
 				db: tt.fields.db,
 			}
-			url, err := m.Get(UserID, tt.args.id)
+			url, err := m.Get(tt.args.id)
 
 			assert.Equal(t, tt.wantErr, err != nil)
 			assert.Equal(t, tt.want, url)
@@ -117,7 +126,7 @@ func TestMemoRepo_Get(t *testing.T) {
 
 func TestMemoRepo_Has(t *testing.T) {
 	type fields struct {
-		db map[string]map[string]string
+		db map[string]UrlRes
 	}
 	type args struct {
 		id string
@@ -131,16 +140,22 @@ func TestMemoRepo_Has(t *testing.T) {
 	}{
 		{
 			name: "Missing ID",
-			fields: fields{db: map[string]map[string]string{
-				UserID: {"googl": "https://google.com"},
+			fields: fields{db: map[string]UrlRes{
+				"bar": {
+					url: "https://google.com",
+					uid: UserID,
+				},
 			}},
 			args: args{id: "foo"},
 			want: false,
 		},
 		{
 			name: "Existing ID",
-			fields: fields{db: map[string]map[string]string{
-				UserID: {"googl": "https://google.com"},
+			fields: fields{db: map[string]UrlRes{
+				"googl": {
+					url: "https://google.com",
+					uid: UserID,
+				},
 			}},
 			args: args{id: "googl"},
 			want: true,
@@ -152,7 +167,7 @@ func TestMemoRepo_Has(t *testing.T) {
 				db: tt.fields.db,
 			}
 
-			has, err := m.Has(UserID, tt.args.id)
+			has, err := m.Has(tt.args.id)
 
 			assert.Equal(t, tt.want, has)
 			assert.Equal(t, tt.wantErr, err != nil)
@@ -252,12 +267,12 @@ func TestFileRepo_Clear(t *testing.T) {
 			}
 
 			f.Add(UserID, "googl", "https://google.com")
-			has, err := f.Has(UserID, "googl")
+			has, err := f.Has("googl")
 			assert.Equal(t, true, has)
 			assert.Equal(t, false, err != nil)
 
 			f.Clear()
-			has, err = f.Has(UserID, "googl")
+			has, err = f.Has("googl")
 			assert.Equal(t, false, has)
 			assert.Equal(t, false, err != nil)
 		})
@@ -276,14 +291,17 @@ func TestFileRepo_Get(t *testing.T) {
 		fields  fields
 		args    args
 		want    string
-		data    map[string]map[string]string
+		data    map[string]UrlRes
 		wantErr bool
 	}{
 		{
 			name:   "Missing ID",
 			fields: fields{filename: "testfile"},
-			data: map[string]map[string]string{
-				UserID: {"googl": "https://google.com"},
+			data: map[string]UrlRes{
+				"googl": {
+					url: "https://google.com",
+					uid: UserID,
+				},
 			},
 			args:    args{id: "foo"},
 			wantErr: true,
@@ -291,8 +309,11 @@ func TestFileRepo_Get(t *testing.T) {
 		{
 			name:   "Existing ID",
 			fields: fields{filename: "testfile"},
-			data: map[string]map[string]string{
-				UserID: {"googl": "https://google.com"},
+			data: map[string]UrlRes{
+				"googl": {
+					url: "https://google.com",
+					uid: UserID,
+				},
 			},
 			args:    args{id: "googl"},
 			want:    "https://google.com",
@@ -305,13 +326,11 @@ func TestFileRepo_Get(t *testing.T) {
 				filename: tt.fields.filename,
 			}
 
-			for _, urls := range tt.data {
-				for id, url := range urls {
-					f.Add(UserID, id, url)
-				}
+			for id, res := range tt.data {
+				f.Add(UserID, id, res.url)
 			}
 
-			got, err := f.Get(UserID, tt.args.id)
+			got, err := f.Get(tt.args.id)
 			assert.Equal(t, tt.wantErr, err != nil)
 			assert.Equalf(t, tt.want, got, "Get(%v)", tt.args.id)
 
@@ -332,7 +351,7 @@ func TestFileRepo_Has(t *testing.T) {
 	tests := []struct {
 		name    string
 		fields  fields
-		data    map[string]map[string]string
+		data    map[string]UrlRes
 		args    args
 		want    bool
 		wantErr bool
@@ -346,8 +365,11 @@ func TestFileRepo_Has(t *testing.T) {
 		{
 			name:   "Existing ID",
 			fields: fields{filename: "testfile"},
-			data: map[string]map[string]string{
-				UserID: {"googl": "https://google.com"},
+			data: map[string]UrlRes{
+				"googl": {
+					url: "https://google.com",
+					uid: UserID,
+				},
 			},
 			args: args{id: "googl"},
 			want: true,
@@ -359,13 +381,11 @@ func TestFileRepo_Has(t *testing.T) {
 				filename: tt.fields.filename,
 			}
 
-			for _, urls := range tt.data {
-				for id, url := range urls {
-					f.Add(UserID, id, url)
-				}
+			for id, res := range tt.data {
+				f.Add(UserID, id, res.url)
 			}
 
-			has, err := f.Has(UserID, tt.args.id)
+			has, err := f.Has(tt.args.id)
 			assert.Equal(t, tt.want, has)
 			assert.Equal(t, tt.wantErr, err != nil)
 
