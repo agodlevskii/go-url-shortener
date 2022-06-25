@@ -9,10 +9,10 @@ import (
 )
 
 type Storager interface {
-	Add(userId, id, val string) error
-	Has(userId, id string) (bool, error)
-	Get(userId, id string) (string, error)
-	GetAll(userId string) (map[string]string, error)
+	Add(userID, id, val string) error
+	Has(userID, id string) (bool, error)
+	Get(userID, id string) (string, error)
+	GetAll(userID string) (map[string]string, error)
 	Clear()
 }
 
@@ -24,19 +24,19 @@ func NewMemoryRepo() MemoRepo {
 	return MemoRepo{db: make(map[string]map[string]string)}
 }
 
-func (m MemoRepo) Add(userId, id, url string) error {
-	us, ok := m.db[userId]
+func (m MemoRepo) Add(userID, id, url string) error {
+	us, ok := m.db[userID]
 	if !ok {
-		m.db[userId] = make(map[string]string)
-		us = m.db[userId]
+		m.db[userID] = make(map[string]string)
+		us = m.db[userID]
 	}
 
 	us[id] = url
 	return nil
 }
 
-func (m MemoRepo) Has(userId, id string) (bool, error) {
-	if us, ok := m.db[userId]; ok {
+func (m MemoRepo) Has(userID, id string) (bool, error) {
+	if us, ok := m.db[userID]; ok {
 		if _, ok := us[id]; ok {
 			return true, nil
 		}
@@ -45,8 +45,8 @@ func (m MemoRepo) Has(userId, id string) (bool, error) {
 	return false, nil
 }
 
-func (m MemoRepo) Get(userId, id string) (string, error) {
-	if us, ok := m.db[userId]; ok {
+func (m MemoRepo) Get(userID, id string) (string, error) {
+	if us, ok := m.db[userID]; ok {
 		if url, ok := us[id]; ok {
 			return url, nil
 		}
@@ -55,8 +55,8 @@ func (m MemoRepo) Get(userId, id string) (string, error) {
 	return "", errors.New("no matching URL found")
 }
 
-func (m MemoRepo) GetAll(userId string) (map[string]string, error) {
-	if us, ok := m.db[userId]; ok {
+func (m MemoRepo) GetAll(userID string) (map[string]string, error) {
+	if us, ok := m.db[userID]; ok {
 		return us, nil
 	}
 
@@ -90,19 +90,19 @@ func NewFileRepo(filename string) (FileRepo, error) {
 	return FileRepo{filename: filename}, nil
 }
 
-func (f FileRepo) Add(userId, id, url string) error {
+func (f FileRepo) Add(userID, id, url string) error {
 	file, err := os.OpenFile(f.filename, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0777)
 	if err != nil {
 		return err
 	}
 
-	if _, err = file.WriteString(userId + " : " + id + " : " + url + "\n"); err != nil {
+	if _, err = file.WriteString(userID + " : " + id + " : " + url + "\n"); err != nil {
 		return err
 	}
 	return file.Close()
 }
 
-func (f FileRepo) Get(userId, id string) (string, error) {
+func (f FileRepo) Get(userID, id string) (string, error) {
 	file, err := os.OpenFile(f.filename, os.O_RDONLY|os.O_CREATE, 0777)
 	if err != nil {
 		return "", err
@@ -119,7 +119,7 @@ func (f FileRepo) Get(userId, id string) (string, error) {
 			return "", errors.New("malformed file: " + file.Name())
 		}
 
-		if data[0] == userId && data[1] == id {
+		if data[0] == userID && data[1] == id {
 			return data[2], nil
 		}
 	}
@@ -131,7 +131,7 @@ func (f FileRepo) Get(userId, id string) (string, error) {
 	return "", errors.New("no matching URL found")
 }
 
-func (f FileRepo) GetAll(userId string) (map[string]string, error) {
+func (f FileRepo) GetAll(userID string) (map[string]string, error) {
 	file, err := os.OpenFile(f.filename, os.O_RDONLY|os.O_CREATE, 0777)
 	if err != nil {
 		log.Error(err)
@@ -150,7 +150,7 @@ func (f FileRepo) GetAll(userId string) (map[string]string, error) {
 			return nil, errors.New("malformed file: " + file.Name())
 		}
 
-		if data[0] == userId {
+		if data[0] == userID {
 			urls[data[1]] = data[2]
 		}
 	}
@@ -162,7 +162,7 @@ func (f FileRepo) GetAll(userId string) (map[string]string, error) {
 	return urls, nil
 }
 
-func (f FileRepo) Has(userId, id string) (bool, error) {
+func (f FileRepo) Has(userID, id string) (bool, error) {
 	file, err := os.OpenFile(f.filename, os.O_RDONLY|os.O_CREATE, 0777)
 	if err != nil {
 		return false, err
@@ -187,7 +187,7 @@ func (f FileRepo) Has(userId, id string) (bool, error) {
 			return false, nil
 		}
 
-		if data[0] == userId && data[1] == id {
+		if data[0] == userID && data[1] == id {
 			return true, nil
 		}
 	}

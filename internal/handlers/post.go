@@ -40,13 +40,13 @@ func APIPostHandler(db storage.Storager, baseURL string) func(w http.ResponseWri
 			return
 		}
 
-		userId, err := middlewares.GetUserId(r)
+		userID, err := middlewares.GetUserID(r)
 		if err != nil {
 			http.Error(w, "Cannot identify a user", http.StatusInternalServerError)
 			return
 		}
 
-		shortURI, err := shortenURL(db, userId, uri, baseURL)
+		shortURI, err := shortenURL(db, userID, uri, baseURL)
 		if err != nil {
 			log.Error(err)
 			http.Error(w, "Couldn't generate the short URL. Please try again later.", http.StatusInternalServerError)
@@ -78,13 +78,13 @@ func WebPostHandler(db storage.Storager, baseURL string) func(w http.ResponseWri
 			return
 		}
 
-		userId, err := middlewares.GetUserId(r)
+		userID, err := middlewares.GetUserID(r)
 		if err != nil {
 			http.Error(w, "Cannot identify a user", http.StatusInternalServerError)
 			return
 		}
 
-		res, err := shortenURL(db, userId, uri, baseURL)
+		res, err := shortenURL(db, userID, uri, baseURL)
 		if err != nil {
 			log.Error(err)
 			http.Error(w, "Couldn't generate the short URL. Please try again later.", http.StatusInternalServerError)
@@ -100,16 +100,16 @@ func WebPostHandler(db storage.Storager, baseURL string) func(w http.ResponseWri
 	}
 }
 
-func shortenURL(db storage.Storager, userId, uri, baseURL string) (string, error) {
+func shortenURL(db storage.Storager, userID, uri, baseURL string) (string, error) {
 	if !validators.IsURLStringValid(uri) {
 		return "", errors.New("you provided an incorrect URL")
 	}
 
-	id, err := generators.GenerateID(db, userId, 7)
+	id, err := generators.GenerateID(db, userID, 7)
 	if err != nil {
 		return "", err
 	}
-	if err = db.Add(userId, id, uri); err != nil {
+	if err = db.Add(userID, id, uri); err != nil {
 		return "", err
 	}
 

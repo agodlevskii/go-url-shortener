@@ -41,7 +41,7 @@ func Authorize(next http.Handler) http.Handler {
 	})
 }
 
-func GetUserId(r *http.Request) (string, error) {
+func GetUserID(r *http.Request) (string, error) {
 	cookie, err := r.Cookie(configs.UserCookieName)
 	if err != nil {
 		return "", err

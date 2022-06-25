@@ -10,7 +10,7 @@ import (
 
 func GetFullURL(db storage.Storager) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userId, err := middlewares.GetUserId(r)
+		userID, err := middlewares.GetUserID(r)
 		if err != nil {
 			log.Error(err)
 			http.Error(w, "Cannot identify a user", http.StatusInternalServerError)
@@ -18,8 +18,8 @@ func GetFullURL(db storage.Storager) func(w http.ResponseWriter, r *http.Request
 		}
 
 		id := chi.URLParam(r, "id")
-		url, err := db.Get(userId, id)
-		log.Info("userId: ", userId)
+		url, err := db.Get(userID, id)
+		log.Info("userID: ", userID)
 		if err != nil {
 			log.Error(err)
 			http.Error(w, err.Error(), http.StatusBadRequest)

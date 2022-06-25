@@ -5,7 +5,7 @@ import (
 	"go-url-shortener/internal/storage"
 )
 
-func GenerateID(db storage.Storager, userId string, size int) (string, error) {
+func GenerateID(db storage.Storager, userID string, size int) (string, error) {
 	if size == 0 {
 		return "", errors.New("missing ID size")
 	}
@@ -16,7 +16,7 @@ func GenerateID(db storage.Storager, userId string, size int) (string, error) {
 			return "", err
 		}
 
-		has, err := db.Has(userId, id)
+		has, err := db.Has(userID, id)
 		if err != nil {
 			return "", err
 		}

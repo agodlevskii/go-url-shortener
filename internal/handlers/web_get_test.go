@@ -47,7 +47,7 @@ func TestGetFullURL(t *testing.T) {
 			name: "Correct ID parameter value",
 			id:   "googl",
 			storage: map[string]map[string]string{
-				UserId: {"googl": "https://google.com"},
+				UserID: {"googl": "https://google.com"},
 			},
 			want: want{
 				code:        http.StatusTemporaryRedirect,

@@ -16,15 +16,15 @@ import (
 	"testing"
 )
 
-var UserIdEnc = "4b529d6712a1d59f62a87dc4fa54f332"
-var UserId = "7190e4d4-fd9c-4b"
+var UserIDEnc = "4b529d6712a1d59f62a87dc4fa54f332"
+var UserID = "7190e4d4-fd9c-4b"
 
 func testRequest(t *testing.T, ts *httptest.Server, method, path, data string) (*http.Response, string) {
 	rawURL := ts.URL + path
 	purl, _ := url.Parse(rawURL)
 	jar, _ := cookiejar.New(nil)
 	jar.SetCookies(purl, []*http.Cookie{
-		{Name: configs.UserCookieName, Value: UserIdEnc, Path: "/"},
+		{Name: configs.UserCookieName, Value: UserIDEnc, Path: "/"},
 	})
 
 	client := &http.Client{

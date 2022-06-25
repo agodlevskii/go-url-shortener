@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-var UserId = "7190e4d4-fd9c-4b"
+var UserID = "7190e4d4-fd9c-4b"
 
 func TestMemoRepo_Add(t *testing.T) {
 	type fields struct {
@@ -37,7 +37,7 @@ func TestMemoRepo_Add(t *testing.T) {
 				db: tt.fields.db,
 			}
 
-			err := m.Add(UserId, tt.args.id, tt.args.url)
+			err := m.Add(UserID, tt.args.id, tt.args.url)
 			assert.Equal(t, tt.wantErr, err != nil)
 		})
 	}
@@ -54,7 +54,7 @@ func TestMemoRepo_Clear(t *testing.T) {
 		{
 			name: "Correct clean",
 			fields: fields{db: map[string]map[string]string{
-				UserId: {"googl": "https://google.com"},
+				UserID: {"googl": "https://google.com"},
 			}},
 		},
 	}
@@ -87,7 +87,7 @@ func TestMemoRepo_Get(t *testing.T) {
 		{
 			name: "Missing ID",
 			fields: fields{db: map[string]map[string]string{
-				UserId: {"googl": "https://google.com"},
+				UserID: {"googl": "https://google.com"},
 			}},
 			args:    args{id: "foo"},
 			wantErr: true,
@@ -95,7 +95,7 @@ func TestMemoRepo_Get(t *testing.T) {
 		{
 			name: "Existing ID",
 			fields: fields{db: map[string]map[string]string{
-				UserId: {"googl": "https://google.com"},
+				UserID: {"googl": "https://google.com"},
 			}},
 			args:    args{id: "googl"},
 			want:    "https://google.com",
@@ -107,7 +107,7 @@ func TestMemoRepo_Get(t *testing.T) {
 			m := MemoRepo{
 				db: tt.fields.db,
 			}
-			url, err := m.Get(UserId, tt.args.id)
+			url, err := m.Get(UserID, tt.args.id)
 
 			assert.Equal(t, tt.wantErr, err != nil)
 			assert.Equal(t, tt.want, url)
@@ -132,7 +132,7 @@ func TestMemoRepo_Has(t *testing.T) {
 		{
 			name: "Missing ID",
 			fields: fields{db: map[string]map[string]string{
-				UserId: {"googl": "https://google.com"},
+				UserID: {"googl": "https://google.com"},
 			}},
 			args: args{id: "foo"},
 			want: false,
@@ -140,7 +140,7 @@ func TestMemoRepo_Has(t *testing.T) {
 		{
 			name: "Existing ID",
 			fields: fields{db: map[string]map[string]string{
-				UserId: {"googl": "https://google.com"},
+				UserID: {"googl": "https://google.com"},
 			}},
 			args: args{id: "googl"},
 			want: true,
@@ -152,7 +152,7 @@ func TestMemoRepo_Has(t *testing.T) {
 				db: tt.fields.db,
 			}
 
-			has, err := m.Has(UserId, tt.args.id)
+			has, err := m.Has(UserID, tt.args.id)
 
 			assert.Equal(t, tt.want, has)
 			assert.Equal(t, tt.wantErr, err != nil)
@@ -224,7 +224,7 @@ func TestFileRepo_Add(t *testing.T) {
 				filename: tt.fields.filename,
 			}
 
-			err := f.Add(UserId, tt.args.id, tt.args.url)
+			err := f.Add(UserID, tt.args.id, tt.args.url)
 			assert.Equal(t, tt.wantErr, err != nil)
 
 			f.Clear()
@@ -251,13 +251,13 @@ func TestFileRepo_Clear(t *testing.T) {
 				filename: tt.fields.filename,
 			}
 
-			f.Add(UserId, "googl", "https://google.com")
-			has, err := f.Has(UserId, "googl")
+			f.Add(UserID, "googl", "https://google.com")
+			has, err := f.Has(UserID, "googl")
 			assert.Equal(t, true, has)
 			assert.Equal(t, false, err != nil)
 
 			f.Clear()
-			has, err = f.Has(UserId, "googl")
+			has, err = f.Has(UserID, "googl")
 			assert.Equal(t, false, has)
 			assert.Equal(t, false, err != nil)
 		})
@@ -283,7 +283,7 @@ func TestFileRepo_Get(t *testing.T) {
 			name:   "Missing ID",
 			fields: fields{filename: "testfile"},
 			data: map[string]map[string]string{
-				UserId: {"googl": "https://google.com"},
+				UserID: {"googl": "https://google.com"},
 			},
 			args:    args{id: "foo"},
 			wantErr: true,
@@ -292,7 +292,7 @@ func TestFileRepo_Get(t *testing.T) {
 			name:   "Existing ID",
 			fields: fields{filename: "testfile"},
 			data: map[string]map[string]string{
-				UserId: {"googl": "https://google.com"},
+				UserID: {"googl": "https://google.com"},
 			},
 			args:    args{id: "googl"},
 			want:    "https://google.com",
@@ -307,11 +307,11 @@ func TestFileRepo_Get(t *testing.T) {
 
 			for _, urls := range tt.data {
 				for id, url := range urls {
-					f.Add(UserId, id, url)
+					f.Add(UserID, id, url)
 				}
 			}
 
-			got, err := f.Get(UserId, tt.args.id)
+			got, err := f.Get(UserID, tt.args.id)
 			assert.Equal(t, tt.wantErr, err != nil)
 			assert.Equalf(t, tt.want, got, "Get(%v)", tt.args.id)
 
@@ -347,7 +347,7 @@ func TestFileRepo_Has(t *testing.T) {
 			name:   "Existing ID",
 			fields: fields{filename: "testfile"},
 			data: map[string]map[string]string{
-				UserId: {"googl": "https://google.com"},
+				UserID: {"googl": "https://google.com"},
 			},
 			args: args{id: "googl"},
 			want: true,
@@ -361,11 +361,11 @@ func TestFileRepo_Has(t *testing.T) {
 
 			for _, urls := range tt.data {
 				for id, url := range urls {
-					f.Add(UserId, id, url)
+					f.Add(UserID, id, url)
 				}
 			}
 
-			has, err := f.Has(UserId, tt.args.id)
+			has, err := f.Has(UserID, tt.args.id)
 			assert.Equal(t, tt.want, has)
 			assert.Equal(t, tt.wantErr, err != nil)
 

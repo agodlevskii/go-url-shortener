@@ -8,17 +8,17 @@ import (
 	"net/http"
 )
 
-func UserURLsHandler(db storage.Storager, baseUrl string) func(http.ResponseWriter, *http.Request) {
+func UserURLsHandler(db storage.Storager, baseURL string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userId, err := middlewares.GetUserId(r)
+		userID, err := middlewares.GetUserID(r)
 		if err != nil {
 			log.Error(err)
 			http.Error(w, "couldn't identify the user", http.StatusInternalServerError)
 			return
 		}
 
-		list := getUserLinks(db, userId, baseUrl)
-		if list == nil || len(list) == 0 {
+		list := getUserLinks(db, userID, baseURL)
+		if len(list) == 0 {
 			w.Header().Set("Content-Type", "text/plain")
 			w.WriteHeader(http.StatusNoContent)
 			w.Write([]byte("No results found."))
@@ -37,21 +37,21 @@ func UserURLsHandler(db storage.Storager, baseUrl string) func(http.ResponseWrit
 	}
 }
 
-func getUserLinks(db storage.Storager, userId, baseUrl string) []UserLink {
-	urls, err := db.GetAll(userId)
+func getUserLinks(db storage.Storager, userID, baseURL string) []UserLink {
+	urls, err := db.GetAll(userID)
 	if err != nil {
 		log.Error(err)
 		return nil
 	}
 
-	if urls == nil || len(urls) == 0 {
+	if len(urls) == 0 {
 		return nil
 	}
 
 	links := make([]UserLink, 0)
 	for id, url := range urls {
 		links = append(links, UserLink{
-			Short:    baseUrl + "/" + id,
+			Short:    baseURL + "/" + id,
 			Original: url,
 		})
 	}
