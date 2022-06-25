@@ -9,7 +9,7 @@ var UserID = "7190e4d4-fd9c-4b"
 
 func TestMemoRepo_Add(t *testing.T) {
 	type fields struct {
-		db map[string]UrlRes
+		db map[string]URLRes
 	}
 	type args struct {
 		id  string
@@ -27,7 +27,7 @@ func TestMemoRepo_Add(t *testing.T) {
 				id:  "googl",
 				url: "https://google.com",
 			},
-			fields:  fields{db: map[string]UrlRes{}},
+			fields:  fields{db: map[string]URLRes{}},
 			wantErr: false,
 		},
 	}
@@ -45,7 +45,7 @@ func TestMemoRepo_Add(t *testing.T) {
 
 func TestMemoRepo_Clear(t *testing.T) {
 	type fields struct {
-		db map[string]UrlRes
+		db map[string]URLRes
 	}
 	tests := []struct {
 		name   string
@@ -53,7 +53,7 @@ func TestMemoRepo_Clear(t *testing.T) {
 	}{
 		{
 			name: "Correct clean",
-			fields: fields{db: map[string]UrlRes{
+			fields: fields{db: map[string]URLRes{
 				"googl": {
 					url: "https://google.com",
 					uid: UserID,
@@ -75,7 +75,7 @@ func TestMemoRepo_Clear(t *testing.T) {
 
 func TestMemoRepo_Get(t *testing.T) {
 	type fields struct {
-		db map[string]UrlRes
+		db map[string]URLRes
 	}
 	type args struct {
 		id string
@@ -89,7 +89,7 @@ func TestMemoRepo_Get(t *testing.T) {
 	}{
 		{
 			name: "Missing ID",
-			fields: fields{db: map[string]UrlRes{
+			fields: fields{db: map[string]URLRes{
 				"googl": {
 					url: "https://google.com",
 					uid: UserID,
@@ -100,7 +100,7 @@ func TestMemoRepo_Get(t *testing.T) {
 		},
 		{
 			name: "Existing ID",
-			fields: fields{db: map[string]UrlRes{
+			fields: fields{db: map[string]URLRes{
 				"googl": {
 					url: "https://google.com",
 					uid: UserID,
@@ -126,7 +126,7 @@ func TestMemoRepo_Get(t *testing.T) {
 
 func TestMemoRepo_Has(t *testing.T) {
 	type fields struct {
-		db map[string]UrlRes
+		db map[string]URLRes
 	}
 	type args struct {
 		id string
@@ -140,7 +140,7 @@ func TestMemoRepo_Has(t *testing.T) {
 	}{
 		{
 			name: "Missing ID",
-			fields: fields{db: map[string]UrlRes{
+			fields: fields{db: map[string]URLRes{
 				"bar": {
 					url: "https://google.com",
 					uid: UserID,
@@ -151,7 +151,7 @@ func TestMemoRepo_Has(t *testing.T) {
 		},
 		{
 			name: "Existing ID",
-			fields: fields{db: map[string]UrlRes{
+			fields: fields{db: map[string]URLRes{
 				"googl": {
 					url: "https://google.com",
 					uid: UserID,
@@ -291,13 +291,13 @@ func TestFileRepo_Get(t *testing.T) {
 		fields  fields
 		args    args
 		want    string
-		data    map[string]UrlRes
+		data    map[string]URLRes
 		wantErr bool
 	}{
 		{
 			name:   "Missing ID",
 			fields: fields{filename: "testfile"},
-			data: map[string]UrlRes{
+			data: map[string]URLRes{
 				"googl": {
 					url: "https://google.com",
 					uid: UserID,
@@ -309,7 +309,7 @@ func TestFileRepo_Get(t *testing.T) {
 		{
 			name:   "Existing ID",
 			fields: fields{filename: "testfile"},
-			data: map[string]UrlRes{
+			data: map[string]URLRes{
 				"googl": {
 					url: "https://google.com",
 					uid: UserID,
@@ -351,7 +351,7 @@ func TestFileRepo_Has(t *testing.T) {
 	tests := []struct {
 		name    string
 		fields  fields
-		data    map[string]UrlRes
+		data    map[string]URLRes
 		args    args
 		want    bool
 		wantErr bool
@@ -365,7 +365,7 @@ func TestFileRepo_Has(t *testing.T) {
 		{
 			name:   "Existing ID",
 			fields: fields{filename: "testfile"},
-			data: map[string]UrlRes{
+			data: map[string]URLRes{
 				"googl": {
 					url: "https://google.com",
 					uid: UserID,

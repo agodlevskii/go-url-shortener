@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-type UrlRes struct {
+type URLRes struct {
 	url string
 	uid string
 }
@@ -22,15 +22,15 @@ type Storager interface {
 }
 
 type MemoRepo struct {
-	db map[string]UrlRes
+	db map[string]URLRes
 }
 
 func NewMemoryRepo() MemoRepo {
-	return MemoRepo{db: make(map[string]UrlRes)}
+	return MemoRepo{db: make(map[string]URLRes)}
 }
 
 func (m MemoRepo) Add(userID, id, url string) error {
-	m.db[id] = UrlRes{
+	m.db[id] = URLRes{
 		url: url,
 		uid: userID,
 	}
