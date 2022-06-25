@@ -16,7 +16,7 @@ func Authorize(next http.Handler) http.Handler {
 		cookie, err := r.Cookie(configs.UserCookieName)
 
 		if err == nil {
-			valid, err := validateId(cookie.Value)
+			valid, err := validateID(cookie.Value)
 			if err != nil {
 				io.WriteString(w, err.Error())
 				return
@@ -28,13 +28,13 @@ func Authorize(next http.Handler) http.Handler {
 			}
 		}
 
-		newId, err := generateId()
+		newID, err := generateID()
 		if err != nil {
 			io.WriteString(w, err.Error())
 			return
 		}
 
-		cookie = &http.Cookie{Name: configs.UserCookieName, Value: newId, Path: "/"}
+		cookie = &http.Cookie{Name: configs.UserCookieName, Value: newID, Path: "/"}
 		http.SetCookie(w, cookie)
 		r.AddCookie(cookie)
 		next.ServeHTTP(w, r)
@@ -54,12 +54,12 @@ func GetUserID(r *http.Request) (string, error) {
 	return string(id), err
 }
 
-func generateId() (string, error) {
+func generateID() (string, error) {
 	id := uuid.New()
 	return encryptors.AESEncrypt(id.String()[:aes.BlockSize])
 }
 
-func validateId(id string) (bool, error) {
+func validateID(id string) (bool, error) {
 	data, err := encryptors.AESDecrypt(id)
 	if err != nil {
 		log.Error(err)
