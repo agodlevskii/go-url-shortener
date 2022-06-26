@@ -9,7 +9,7 @@ import (
 
 func Ping() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		conn, err := pgx.Connect(context.Background(), internal.Config.DbURL)
+		conn, err := pgx.Connect(context.Background(), internal.Config.DBURL)
 		if err != nil {
 			http.Error(w, "couldn't connect to DB", http.StatusInternalServerError)
 			return
