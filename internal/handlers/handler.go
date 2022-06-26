@@ -15,6 +15,7 @@ func NewShortenerRouter(db storage.Storager, baseURL string) *chi.Mux {
 		r.Get("/", GetHomePage)
 		r.Post("/", WebPostHandler(db, baseURL))
 		r.Get("/{id}", GetFullURL(db))
+		r.Get("/ping", Ping())
 
 		r.Route("/api", func(r chi.Router) {
 			r.Post("/shorten", APIPostHandler(db, baseURL))
