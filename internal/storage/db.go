@@ -21,6 +21,14 @@ func NewDBRepo(url string) (DBRepo, error) {
 		return DBRepo{}, err
 	}
 
+	_, err = db.Exec("CREATE TABLE IF NOT EXISTS urls (id VARCHAR(10), url VARCHAR(255), uid VARCHAR(16), UNIQUE(id))")
+	if err != nil {
+		return DBRepo{}, err
+	}
+
+	if err != nil {
+		return DBRepo{}, err
+	}
 	return DBRepo{db: db}, nil
 }
 
