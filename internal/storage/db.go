@@ -25,10 +25,6 @@ func NewDBRepo(url string) (DBRepo, error) {
 	if err != nil {
 		return DBRepo{}, err
 	}
-
-	if err != nil {
-		return DBRepo{}, err
-	}
 	return DBRepo{db: db}, nil
 }
 
