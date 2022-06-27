@@ -8,11 +8,12 @@ import (
 var Config struct {
 	Addr     string `env:"SERVER_ADDRESS" envDefault:"localhost:8080"`
 	BaseURL  string `env:"BASE_URL" envDefault:"http://localhost:8080"`
-	DBURL    string `env:"DATABASE_DSN" envDefault:"postgres://yand:yand@localhost:5432/practicum"`
+	DBURL    string `env:"DATABASE_DSN"`
 	Filename string `env:"FILE_STORAGE_PATH"`
 }
 
 func InitConfig() error {
+	// envDefault:"postgres://yand:yand@localhost:5432/practicum"
 	err := env.Parse(&Config)
 	if err != nil {
 		return err

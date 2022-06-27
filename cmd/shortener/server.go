@@ -28,8 +28,11 @@ func main() {
 }
 
 func getRepo() (storage.Storager, error) {
-	if internal.Config.Filename == "" {
-		return storage.NewMemoryRepo(), nil
+	if internal.Config.DBURL != "" {
+		return storage.NewDBRepo(internal.Config.DBURL)
 	}
-	return storage.NewFileRepo(internal.Config.Filename)
+	if internal.Config.Filename != "" {
+		return storage.NewFileRepo(internal.Config.Filename)
+	}
+	return storage.NewMemoryRepo(), nil
 }
