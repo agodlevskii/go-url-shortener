@@ -49,6 +49,9 @@ func (repo DBRepo) GetAll(userID string) (map[string]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
 	defer rows.Close()
 
 	urls := make(map[string]string)
