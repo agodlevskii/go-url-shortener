@@ -49,10 +49,6 @@ func Batch(db storage.Storager, baseURL string) func(w http.ResponseWriter, r *h
 				ShortURL:      baseURL + "/" + id,
 			})
 		}
-		if err != nil {
-			fireIncorrectRequest(w, err)
-			return
-		}
 
 		err = db.AddAll(userID, batch)
 		if err != nil {
