@@ -10,13 +10,13 @@ import (
 )
 
 type BatchReqData struct {
-	CorrelationId string `json:"correlation_id"`
-	OriginalUrl   string `json:"original_url"`
+	CorrelationID string `json:"correlation_id"`
+	OriginalURL   string `json:"original_url"`
 }
 
 type BatchResData struct {
-	CorrelationId string `json:"correlation_id"`
-	ShortUrl      string `json:"short_url"`
+	CorrelationID string `json:"correlation_id"`
+	ShortURL      string `json:"short_url"`
 }
 
 func Batch(db storage.Storager, baseURL string) func(w http.ResponseWriter, r *http.Request) {
@@ -43,10 +43,10 @@ func Batch(db storage.Storager, baseURL string) func(w http.ResponseWriter, r *h
 				return
 			}
 
-			batch[id] = data.OriginalUrl
+			batch[id] = data.OriginalURL
 			resData = append(resData, BatchResData{
-				CorrelationId: data.CorrelationId,
-				ShortUrl:      baseURL + "/" + id,
+				CorrelationID: data.CorrelationID,
+				ShortURL:      baseURL + "/" + id,
 			})
 		}
 		if err != nil {
