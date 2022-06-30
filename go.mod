@@ -3,6 +3,7 @@ module go-url-shortener
 go 1.18
 
 require (
+	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/caarlos0/env v3.5.0+incompatible
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/google/uuid v1.3.0

@@ -3,6 +3,7 @@ package storage
 import (
 	"database/sql"
 	_ "github.com/jackc/pgx/v4/stdlib"
+	log "github.com/sirupsen/logrus"
 )
 
 type DBRepo struct {
@@ -33,6 +34,38 @@ func (repo DBRepo) Add(userID, id, url string) error {
 	if err != nil || res == nil {
 		return err
 	}
+	return nil
+}
+
+func (repo DBRepo) AddAll(userID string, batch map[string]string) error {
+	tx, err := repo.db.Begin()
+	if err != nil {
+		return err
+	}
+
+	stmt, err := tx.Prepare("INSERT INTO urls(id, url, uid) VALUES ($1, $2, $3)")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	for id, url := range batch {
+		if _, err = stmt.Exec(id, url, userID); err != nil {
+			log.Error(err)
+
+			if err = tx.Rollback(); err != nil {
+				log.Fatal("unable to rollback: ", err)
+			}
+
+			return err
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		log.Fatal("unable to commit: ", err)
+		return err
+	}
+
 	return nil
 }
 
@@ -73,5 +106,5 @@ func (repo DBRepo) GetAll(userID string) (map[string]string, error) {
 }
 
 func (repo DBRepo) Clear() {
-	repo.db.QueryRow("DELETE FROM urls")
+	repo.db.Exec("DELETE FROM urls")
 }

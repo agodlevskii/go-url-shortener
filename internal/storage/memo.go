@@ -19,6 +19,25 @@ func (m MemoRepo) Add(userID, id, url string) error {
 	return nil
 }
 
+func (m MemoRepo) AddAll(userID string, batch map[string]string) error {
+	res := make(map[string]string, len(batch))
+	for id, url := range batch {
+		err := m.Add(userID, id, url)
+		if err != nil {
+			return err
+		}
+
+		r, err := m.Get(id)
+		if err != nil {
+			return err
+		}
+
+		res[id] = r
+	}
+
+	return nil
+}
+
 func (m MemoRepo) Has(id string) (bool, error) {
 	if _, ok := m.db[id]; ok {
 		return true, nil

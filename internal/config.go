@@ -13,7 +13,6 @@ var Config struct {
 }
 
 func InitConfig() error {
-	// envDefault:"postgres://yand:yand@localhost:5432/practicum"
 	err := env.Parse(&Config)
 	if err != nil {
 		return err

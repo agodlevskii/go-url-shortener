@@ -48,7 +48,24 @@ func TestFileRepo_Add(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := tt.repo
-			err := r.Add(UserID, tt.args.id, tt.args.url)
+			err = r.Add(UserID, tt.args.id, tt.args.url)
+			assert.Equal(t, tt.wantErr, err != nil)
+			r.Clear()
+		})
+	}
+}
+
+func TestFileRepo_AddAll(t *testing.T) {
+	repo, err := NewFileRepo("testfile")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tests := getAddAllTestCases(repo)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := tt.repo
+			err = r.AddAll(UserID, tt.batch)
 			assert.Equal(t, tt.wantErr, err != nil)
 			r.Clear()
 		})

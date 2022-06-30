@@ -14,6 +14,13 @@ type AddTestCase struct {
 	wantErr bool
 }
 
+type AddAllTestCase struct {
+	name    string
+	repo    Storager
+	batch   map[string]string
+	wantErr bool
+}
+
 type ClearTestCase struct {
 	name string
 	repo Storager
@@ -45,6 +52,18 @@ func getAddTestCases(repo Storager) []AddTestCase {
 			},
 			repo:    repo,
 			wantErr: false,
+		},
+	}
+}
+
+func getAddAllTestCases(repo Storager) []AddAllTestCase {
+	return []AddAllTestCase{
+		{
+			name: "Correct URLs",
+			repo: repo,
+			batch: map[string]string{
+				"googl": "https://google.com",
+			},
 		},
 	}
 }

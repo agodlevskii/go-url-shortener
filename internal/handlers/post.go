@@ -105,7 +105,7 @@ func shortenURL(db storage.Storager, userID, uri, baseURL string) (string, error
 		return "", errors.New("you provided an incorrect URL")
 	}
 
-	id, err := generators.GenerateID(db, userID, 7)
+	id, err := generators.GenerateID(db, 7)
 	if err != nil {
 		return "", err
 	}

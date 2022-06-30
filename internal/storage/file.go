@@ -41,6 +41,21 @@ func (f FileRepo) Add(userID, id, url string) error {
 	return file.Close()
 }
 
+func (f FileRepo) AddAll(userID string, batch map[string]string) error {
+	file, err := os.OpenFile(f.filename, os.O_WRONLY|os.O_CREATE, 0777)
+	if err != nil {
+		return err
+	}
+
+	for id, url := range batch {
+		if _, err = file.WriteString(id + " : " + url + " : " + userID + "\n"); err != nil {
+			return err
+		}
+	}
+
+	return file.Close()
+}
+
 func (f FileRepo) Get(id string) (string, error) {
 	file, err := os.OpenFile(f.filename, os.O_RDONLY|os.O_CREATE, 0777)
 	if err != nil {
