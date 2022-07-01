@@ -2,7 +2,7 @@ package storage
 
 var UserID = "7190e4d4-fd9c-4b"
 
-type AddTestCaseArgs struct {
+type AddTestCaseWant struct {
 	id  string
 	url string
 }
@@ -10,14 +10,8 @@ type AddTestCaseArgs struct {
 type AddTestCase struct {
 	name    string
 	repo    Storager
-	args    AddTestCaseArgs
-	wantErr bool
-}
-
-type AddAllTestCase struct {
-	name    string
-	repo    Storager
 	batch   map[string]string
+	want    AddTestCaseWant
 	wantErr bool
 }
 
@@ -45,24 +39,14 @@ type HasTestCase struct {
 func getAddTestCases(repo Storager) []AddTestCase {
 	return []AddTestCase{
 		{
-			name: "Correct URL",
-			args: AddTestCaseArgs{
-				id:  "googl",
-				url: "https://google.com",
-			},
-			repo:    repo,
-			wantErr: false,
-		},
-	}
-}
-
-func getAddAllTestCases(repo Storager) []AddAllTestCase {
-	return []AddAllTestCase{
-		{
 			name: "Correct URLs",
 			repo: repo,
 			batch: map[string]string{
 				"googl": "https://google.com",
+			},
+			want: AddTestCaseWant{
+				id:  "googl",
+				url: "https://google.com",
 			},
 		},
 	}

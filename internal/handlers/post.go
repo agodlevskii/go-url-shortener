@@ -109,10 +109,12 @@ func shortenURL(db storage.Storager, userID, uri, baseURL string) (string, error
 	if err != nil {
 		return "", err
 	}
-	if err = db.Add(userID, id, uri); err != nil {
+
+	res, err := db.Add(userID, map[string]string{id: uri})
+	if err != nil {
 		return "", err
 	}
 
-	url := baseURL + "/" + id
+	url := baseURL + "/" + res[uri]
 	return url, nil
 }

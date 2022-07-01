@@ -73,7 +73,7 @@ func TestGetFullURL(t *testing.T) {
 			if len(tt.storage) > 0 {
 				for uid, urls := range tt.storage {
 					for id, url := range urls {
-						err := db.Add(uid, id, url)
+						_, err = db.Add(uid, map[string]string{id: url})
 						if err != nil {
 							t.Error(err)
 						}

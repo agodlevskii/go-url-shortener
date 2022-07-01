@@ -10,32 +10,18 @@ func NewMemoryRepo() MemoRepo {
 	return MemoRepo{db: make(map[string]URLRes)}
 }
 
-func (m MemoRepo) Add(userID, id, url string) error {
-	m.db[id] = URLRes{
-		url: url,
-		uid: userID,
-	}
-
-	return nil
-}
-
-func (m MemoRepo) AddAll(userID string, batch map[string]string) error {
+func (m MemoRepo) Add(userID string, batch map[string]string) (map[string]string, error) {
 	res := make(map[string]string, len(batch))
 	for id, url := range batch {
-		err := m.Add(userID, id, url)
-		if err != nil {
-			return err
+		m.db[id] = URLRes{
+			url: url,
+			uid: userID,
 		}
 
-		r, err := m.Get(id)
-		if err != nil {
-			return err
-		}
-
-		res[id] = r
+		res[url] = id
 	}
 
-	return nil
+	return res, nil
 }
 
 func (m MemoRepo) Has(id string) (bool, error) {

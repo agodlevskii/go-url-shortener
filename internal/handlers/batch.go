@@ -34,28 +34,19 @@ func Batch(db storage.Storager, baseURL string) func(w http.ResponseWriter, r *h
 			return
 		}
 
-		var batch = make(map[string]string, len(req))
-		var resData = make([]BatchResData, 0)
-		for _, data := range req {
-			id, err := generators.GenerateID(db, 7)
-			if err != nil {
-				fireInternalError(w, err)
-				return
-			}
-
-			batch[id] = data.OriginalURL
-			resData = append(resData, BatchResData{
-				CorrelationID: data.CorrelationID,
-				ShortURL:      baseURL + "/" + id,
-			})
-		}
-
-		err = db.AddAll(userID, batch)
+		batch, err := getBatch(db, req)
 		if err != nil {
 			fireInternalError(w, err)
 			return
 		}
 
+		res, err := db.Add(userID, batch)
+		if err != nil {
+			fireInternalError(w, err)
+			return
+		}
+
+		resData := getResponseData(req, res, baseURL)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(201)
 		err = json.NewEncoder(w).Encode(resData)
@@ -63,6 +54,32 @@ func Batch(db storage.Storager, baseURL string) func(w http.ResponseWriter, r *h
 			fireInternalError(w, err)
 		}
 	}
+}
+
+func getBatch(db storage.Storager, req []BatchReqData) (map[string]string, error) {
+	var batch = make(map[string]string, len(req))
+	for _, data := range req {
+		id, err := generators.GenerateID(db, 7)
+		if err != nil {
+			return nil, err
+		}
+
+		batch[id] = data.OriginalURL
+	}
+
+	return batch, nil
+}
+
+func getResponseData(req []BatchReqData, res map[string]string, baseURL string) []BatchResData {
+	var resData = make([]BatchResData, len(req))
+	for i, data := range req {
+		resData[i] = BatchResData{
+			CorrelationID: data.CorrelationID,
+			ShortURL:      baseURL + "/" + res[data.OriginalURL],
+		}
+	}
+
+	return resData
 }
 
 func fireIncorrectRequest(w http.ResponseWriter, err error) {

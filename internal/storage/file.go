@@ -29,31 +29,22 @@ func NewFileRepo(filename string) (FileRepo, error) {
 	return FileRepo{filename: filename}, nil
 }
 
-func (f FileRepo) Add(userID, id, url string) error {
-	file, err := os.OpenFile(f.filename, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0777)
-	if err != nil {
-		return err
-	}
-
-	if _, err = file.WriteString(id + " : " + url + " : " + userID + "\n"); err != nil {
-		return err
-	}
-	return file.Close()
-}
-
-func (f FileRepo) AddAll(userID string, batch map[string]string) error {
+func (f FileRepo) Add(userID string, batch map[string]string) (map[string]string, error) {
 	file, err := os.OpenFile(f.filename, os.O_WRONLY|os.O_CREATE, 0777)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
+	res := make(map[string]string, len(batch))
 	for id, url := range batch {
 		if _, err = file.WriteString(id + " : " + url + " : " + userID + "\n"); err != nil {
-			return err
+			return nil, err
 		}
+
+		res[url] = id
 	}
 
-	return file.Close()
+	return res, file.Close()
 }
 
 func (f FileRepo) Get(id string) (string, error) {
@@ -150,7 +141,7 @@ func (f FileRepo) Has(id string) (bool, error) {
 }
 
 func (f FileRepo) Clear() {
-	if _, err := os.Create(f.filename); err != nil {
+	if err := os.Remove(f.filename); err != nil {
 		log.Error(err)
 	}
 }

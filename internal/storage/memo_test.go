@@ -11,20 +11,8 @@ func TestMemoRepo_Add(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := tt.repo
-			err := r.Add(UserID, tt.args.id, tt.args.url)
-			assert.Equal(t, tt.wantErr, err != nil)
-			r.Clear()
-		})
-	}
-}
-
-func TestMemoRepo_AddAll(t *testing.T) {
-	tests := getAddAllTestCases(NewMemoryRepo())
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			r := tt.repo
-			err := r.AddAll(UserID, tt.batch)
+			got, err := r.Add(UserID, tt.batch)
+			assert.Equal(t, tt.want.id, got[tt.want.url])
 			assert.Equal(t, tt.wantErr, err != nil)
 			r.Clear()
 		})
@@ -33,7 +21,7 @@ func TestMemoRepo_AddAll(t *testing.T) {
 
 func TestMemoRepo_Clear(t *testing.T) {
 	repo := NewMemoryRepo()
-	err := repo.Add("googl", "https://google.com", UserID)
+	_, err := repo.Add(UserID, map[string]string{"googl": "https://google.com"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -55,7 +43,7 @@ func TestMemoRepo_Clear(t *testing.T) {
 
 func TestMemoRepo_Get(t *testing.T) {
 	repo := NewMemoryRepo()
-	err := repo.Add(UserID, "googl", "https://google.com")
+	_, err := repo.Add(UserID, map[string]string{"googl": "https://google.com"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,7 +63,7 @@ func TestMemoRepo_Get(t *testing.T) {
 
 func TestMemoRepo_Has(t *testing.T) {
 	repo := NewMemoryRepo()
-	err := repo.Add(UserID, "googl", "https://google.com")
+	_, err := repo.Add(UserID, map[string]string{"googl": "https://google.com"})
 	if err != nil {
 		t.Fatal(err)
 	}
