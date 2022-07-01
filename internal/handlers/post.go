@@ -88,7 +88,7 @@ func WebPostHandler(db storage.Storager, baseURL string) func(w http.ResponseWri
 			return
 		}
 
-		res, _, err := shortenURL(db, userID, uri, baseURL)
+		res, chg, err := shortenURL(db, userID, uri, baseURL)
 		if err != nil {
 			log.Error(err)
 			http.Error(w, "Couldn't generate the short URL. Please try again later.", http.StatusInternalServerError)
@@ -96,6 +96,11 @@ func WebPostHandler(db storage.Storager, baseURL string) func(w http.ResponseWri
 		}
 
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		if chg {
+			w.WriteHeader(http.StatusConflict)
+		} else {
+			w.WriteHeader(http.StatusCreated)
+		}
 		w.WriteHeader(http.StatusCreated)
 		_, err = w.Write([]byte(res))
 		if err != nil {
