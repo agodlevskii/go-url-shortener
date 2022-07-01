@@ -43,12 +43,12 @@ func (repo DBRepo) Add(userID string, batch map[string]string) (map[string]strin
 
 	res := make(map[string]string, len(batch))
 	for id, url := range batch {
-		var newId string
+		var newID string
 
-		err = stmt.QueryRow(id, url, userID).Scan(&newId)
+		err = stmt.QueryRow(id, url, userID).Scan(&newID)
 		if err != nil {
 			if err.Error() == "sql: no rows in result set" {
-				err = repo.db.QueryRow("SELECT id FROM urls WHERE url = $1", url).Scan(&newId)
+				err = repo.db.QueryRow("SELECT id FROM urls WHERE url = $1", url).Scan(&newID)
 			}
 
 			if err != nil {
@@ -61,7 +61,7 @@ func (repo DBRepo) Add(userID string, batch map[string]string) (map[string]strin
 			}
 		}
 
-		res[url] = newId
+		res[url] = newID
 	}
 
 	if err = tx.Commit(); err != nil {
