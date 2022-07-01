@@ -30,18 +30,23 @@ func NewFileRepo(filename string) (FileRepo, error) {
 }
 
 func (f FileRepo) Add(userID string, batch map[string]string) (map[string]string, error) {
-	file, err := os.OpenFile(f.filename, os.O_WRONLY|os.O_CREATE, 0777)
+	file, err := os.OpenFile(f.filename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0777)
 	if err != nil {
 		return nil, err
 	}
 
 	res := make(map[string]string, len(batch))
+	w := bufio.NewWriter(file)
 	for id, url := range batch {
-		if _, err = file.WriteString(id + " : " + url + " : " + userID + "\n"); err != nil {
+		_, err = w.WriteString(id + " : " + url + " : " + userID + "\n")
+		if err != nil {
 			return nil, err
 		}
-
 		res[url] = id
+	}
+
+	if err = w.Flush(); err != nil {
+		return nil, err
 	}
 
 	return res, file.Close()
@@ -57,8 +62,10 @@ func (f FileRepo) Get(id string) (string, error) {
 	scanner := bufio.NewScanner(file)
 	counter := 0
 
+	var info string
 	for ; scanner.Scan(); counter++ {
-		data := strings.Split(scanner.Text(), " : ")
+		text := scanner.Text()
+		data := strings.Split(text, " : ")
 
 		if len(data) < 3 {
 			return "", errors.New("malformed file: " + file.Name())
@@ -69,11 +76,13 @@ func (f FileRepo) Get(id string) (string, error) {
 		}
 	}
 
+	log.Info(info)
+
 	if counter == 0 {
 		return "", scanner.Err()
 	}
 
-	return "", errors.New("no matching URL found")
+	return "", errors.New("no matching URL found: " + id)
 }
 
 func (f FileRepo) GetAll(userID string) (map[string]string, error) {
