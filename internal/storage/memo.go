@@ -10,8 +10,7 @@ type MemoRepo struct {
 }
 
 func NewMemoryRepo() *MemoRepo {
-	var db sync.Map
-	return &MemoRepo{db: db}
+	return &MemoRepo{db: sync.Map{}}
 }
 
 func (m *MemoRepo) Add(batch []ShortURL) ([]ShortURL, error) {

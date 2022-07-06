@@ -76,11 +76,11 @@ func getBatch(db storage.Storager, req []BatchReqData, userID string) ([]storage
 
 func getResponseData(req []BatchReqData, res []storage.ShortURL, baseURL string) []BatchResData {
 	resData := make([]BatchResData, len(req))
-	urlToCorId := getURLToCorIdMap(req)
+	urlToCorID := getURLToCorIDMap(req)
 
 	for i, sURL := range res {
 		resData[i] = BatchResData{
-			CorrelationID: urlToCorId[sURL.URL],
+			CorrelationID: urlToCorID[sURL.URL],
 			ShortURL:      baseURL + "/" + sURL.ID,
 		}
 	}
@@ -88,7 +88,7 @@ func getResponseData(req []BatchReqData, res []storage.ShortURL, baseURL string)
 	return resData
 }
 
-func getURLToCorIdMap(req []BatchReqData) map[string]string {
+func getURLToCorIDMap(req []BatchReqData) map[string]string {
 	res := make(map[string]string, len(req))
 	for _, data := range req {
 		res[data.OriginalURL] = data.CorrelationID
