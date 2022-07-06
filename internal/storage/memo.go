@@ -43,7 +43,7 @@ func (m *MemoRepo) Get(id string) (string, error) {
 func (m *MemoRepo) GetAll(userID string) ([]ShortURL, error) {
 	urls := make([]ShortURL, 0)
 
-	m.db.Range(func(_, v any) bool {
+	m.db.Range(func(_, v interface{}) bool {
 		sURL := v.(ShortURL)
 		if sURL.UID == userID {
 			urls = append(urls, sURL)
@@ -55,7 +55,7 @@ func (m *MemoRepo) GetAll(userID string) ([]ShortURL, error) {
 }
 
 func (m *MemoRepo) Clear() {
-	m.db.Range(func(key, _ any) bool {
+	m.db.Range(func(key, _ interface{}) bool {
 		m.db.Delete(key)
 		return true
 	})
