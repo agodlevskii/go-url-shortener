@@ -8,7 +8,7 @@ import (
 
 func TestGenerateID(t *testing.T) {
 	type args struct {
-		db   storage.MemoRepo
+		db   *storage.MemoRepo
 		size int
 	}
 	tests := []struct {

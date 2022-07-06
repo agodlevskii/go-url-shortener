@@ -49,10 +49,10 @@ func getUserLinks(db storage.Storager, userID, baseURL string) []UserLink {
 	}
 
 	links := make([]UserLink, 0)
-	for id, url := range urls {
+	for _, url := range urls {
 		links = append(links, UserLink{
-			Short:    baseURL + "/" + id,
-			Original: url,
+			Short:    baseURL + "/" + url.ID,
+			Original: url.URL,
 		})
 	}
 

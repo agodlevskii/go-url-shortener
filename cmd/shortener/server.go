@@ -2,37 +2,36 @@ package main
 
 import (
 	log "github.com/sirupsen/logrus"
-	"go-url-shortener/internal"
+	"go-url-shortener/internal/config"
 	"go-url-shortener/internal/handlers"
 	"go-url-shortener/internal/storage"
 	"net/http"
 )
 
 func main() {
-	err := internal.InitConfig()
+	cfg, err := config.NewConfig()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	repo, err := getRepo()
+	repo, err := getRepo(cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	r := handlers.NewShortenerRouter(repo, internal.Config.BaseURL)
-
-	err = http.ListenAndServe(internal.Config.Addr, r)
+	r := handlers.NewShortenerRouter(repo, cfg.BaseURL)
+	err = http.ListenAndServe(cfg.Addr, r)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func getRepo() (storage.Storager, error) {
-	if internal.Config.DBURL != "" {
-		return storage.NewDBRepo(internal.Config.DBURL)
+func getRepo(cfg *config.Config) (storage.Storager, error) {
+	if cfg.DBURL != "" {
+		return storage.NewDBRepo(cfg.DBURL)
 	}
-	if internal.Config.Filename != "" {
-		return storage.NewFileRepo(internal.Config.Filename)
+	if cfg.Filename != "" {
+		return storage.NewFileRepo(cfg.Filename)
 	}
 	return storage.NewMemoryRepo(), nil
 }

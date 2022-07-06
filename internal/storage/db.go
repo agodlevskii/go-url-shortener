@@ -2,18 +2,14 @@ package storage
 
 import (
 	"database/sql"
+	"errors"
+	"github.com/jackc/pgx/v4"
 	_ "github.com/jackc/pgx/v4/stdlib"
 	log "github.com/sirupsen/logrus"
 )
 
 type DBRepo struct {
 	db *sql.DB
-}
-
-type DBURLRes struct {
-	id  string
-	url string
-	uid string
 }
 
 func NewDBRepo(url string) (DBRepo, error) {
@@ -29,7 +25,7 @@ func NewDBRepo(url string) (DBRepo, error) {
 	return DBRepo{db: db}, nil
 }
 
-func (repo DBRepo) Add(userID string, batch map[string]string) (map[string]string, error) {
+func (repo DBRepo) Add(batch []ShortURL) ([]ShortURL, error) {
 	tx, err := repo.db.Begin()
 	if err != nil {
 		return nil, err
@@ -41,31 +37,35 @@ func (repo DBRepo) Add(userID string, batch map[string]string) (map[string]strin
 	}
 	defer stmt.Close()
 
-	res := make(map[string]string, len(batch))
-	for id, url := range batch {
+	res := make([]ShortURL, len(batch))
+	for i, sURL := range batch {
 		var newID string
 
-		err = stmt.QueryRow(id, url, userID).Scan(&newID)
+		err = stmt.QueryRow(sURL.ID, sURL.URL, sURL.UID).Scan(&newID)
 		if err != nil {
-			if err.Error() == "sql: no rows in result set" {
-				err = repo.db.QueryRow("SELECT id FROM urls WHERE url = $1", url).Scan(&newID)
+			if errors.Is(err, pgx.ErrNoRows) || err.Error() == "sql: no rows in result set" {
+				err = repo.db.QueryRow("SELECT id FROM urls WHERE url = $1", sURL.URL).Scan(&newID)
 			}
 
 			if err != nil {
 				log.Error(err)
 				if err = tx.Rollback(); err != nil {
-					log.Fatal("unable to rollback: ", err)
+					log.Error("unable to rollback: ", err)
 				}
 
 				return nil, err
 			}
 		}
 
-		res[url] = newID
+		res[i] = ShortURL{
+			ID:  newID,
+			URL: sURL.URL,
+			UID: sURL.UID,
+		}
 	}
 
 	if err = tx.Commit(); err != nil {
-		log.Fatal("unable to commit: ", err)
+		log.Error("unable to commit: ", err)
 		return nil, err
 	}
 
@@ -84,7 +84,7 @@ func (repo DBRepo) Get(id string) (string, error) {
 	return url, err
 }
 
-func (repo DBRepo) GetAll(userID string) (map[string]string, error) {
+func (repo DBRepo) GetAll(userID string) ([]ShortURL, error) {
 	rows, err := repo.db.Query("SELECT * FROM urls WHERE uid = $1", userID)
 	if err != nil {
 		return nil, err
@@ -94,15 +94,15 @@ func (repo DBRepo) GetAll(userID string) (map[string]string, error) {
 	}
 	defer rows.Close()
 
-	urls := make(map[string]string)
+	urls := make([]ShortURL, 0)
 	for rows.Next() {
-		var res DBURLRes
-		err = rows.Scan(&res.id, &res.url, &res.uid)
+		var sURL ShortURL
+		err = rows.Scan(&sURL.ID, &sURL.URL, &sURL.UID)
 		if err != nil {
 			return nil, err
 		}
 
-		urls[res.id] = res.url
+		urls = append(urls, sURL)
 	}
 
 	return urls, nil
@@ -110,4 +110,8 @@ func (repo DBRepo) GetAll(userID string) (map[string]string, error) {
 
 func (repo DBRepo) Clear() {
 	repo.db.Exec("DELETE FROM urls")
+}
+
+func (repo DBRepo) Ping() bool {
+	return repo.db.Ping() == nil
 }

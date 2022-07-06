@@ -29,26 +29,26 @@ func NewFileRepo(filename string) (FileRepo, error) {
 	return FileRepo{filename: filename}, nil
 }
 
-func (f FileRepo) Add(userID string, batch map[string]string) (map[string]string, error) {
+func (f FileRepo) Add(batch []ShortURL) ([]ShortURL, error) {
 	file, err := os.OpenFile(f.filename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0777)
 	if err != nil {
 		return nil, err
 	}
 
-	res := make(map[string]string, len(batch))
 	w := bufio.NewWriter(file)
-	for id, url := range batch {
-		_, err = w.WriteString(id + " : " + url + " : " + userID + "\n")
+	for _, sURL := range batch {
+		_, err = w.WriteString(sURL.ID + " : " + sURL.URL + " : " + sURL.UID + "\n")
 		if err != nil {
 			return nil, err
 		}
-		res[url] = id
 	}
 
 	if err = w.Flush(); err != nil {
 		return nil, err
 	}
 
+	res := make([]ShortURL, len(batch))
+	copy(res, batch)
 	return res, file.Close()
 }
 
@@ -60,10 +60,7 @@ func (f FileRepo) Get(id string) (string, error) {
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
-	counter := 0
-
-	var info string
-	for ; scanner.Scan(); counter++ {
+	for scanner.Scan() {
 		text := scanner.Text()
 		data := strings.Split(text, " : ")
 
@@ -76,16 +73,14 @@ func (f FileRepo) Get(id string) (string, error) {
 		}
 	}
 
-	log.Info(info)
-
-	if counter == 0 {
+	if scanner.Err() != nil {
 		return "", scanner.Err()
 	}
 
 	return "", errors.New("no matching URL found: " + id)
 }
 
-func (f FileRepo) GetAll(userID string) (map[string]string, error) {
+func (f FileRepo) GetAll(userID string) ([]ShortURL, error) {
 	file, err := os.OpenFile(f.filename, os.O_RDONLY|os.O_CREATE, 0777)
 	if err != nil {
 		log.Error(err)
@@ -93,7 +88,7 @@ func (f FileRepo) GetAll(userID string) (map[string]string, error) {
 	}
 	defer file.Close()
 
-	urls := make(map[string]string)
+	urls := make([]ShortURL, 0)
 	scanner := bufio.NewScanner(file)
 	counter := 0
 
@@ -105,7 +100,11 @@ func (f FileRepo) GetAll(userID string) (map[string]string, error) {
 		}
 
 		if data[2] == userID {
-			urls[data[0]] = data[1]
+			urls = append(urls, ShortURL{
+				ID:  data[0],
+				URL: data[1],
+				UID: userID,
+			})
 		}
 	}
 
@@ -153,4 +152,9 @@ func (f FileRepo) Clear() {
 	if err := os.Remove(f.filename); err != nil {
 		log.Error(err)
 	}
+}
+
+func (f FileRepo) Ping() bool {
+	_, err := os.Stat(f.filename)
+	return err == nil
 }

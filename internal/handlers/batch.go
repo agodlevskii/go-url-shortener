@@ -34,13 +34,13 @@ func Batch(db storage.Storager, baseURL string) func(w http.ResponseWriter, r *h
 			return
 		}
 
-		batch, err := getBatch(db, req)
+		batch, err := getBatch(db, req, userID)
 		if err != nil {
 			fireInternalError(w, err)
 			return
 		}
 
-		res, err := db.Add(userID, batch)
+		res, err := db.Add(batch)
 		if err != nil {
 			fireInternalError(w, err)
 			return
@@ -56,30 +56,44 @@ func Batch(db storage.Storager, baseURL string) func(w http.ResponseWriter, r *h
 	}
 }
 
-func getBatch(db storage.Storager, req []BatchReqData) (map[string]string, error) {
-	var batch = make(map[string]string, len(req))
-	for _, data := range req {
+func getBatch(db storage.Storager, req []BatchReqData, userID string) ([]storage.ShortURL, error) {
+	var batch = make([]storage.ShortURL, len(req))
+	for i, data := range req {
 		id, err := generators.GenerateID(db, 7)
 		if err != nil {
 			return nil, err
 		}
 
-		batch[id] = data.OriginalURL
+		batch[i] = storage.ShortURL{
+			ID:  id,
+			URL: data.OriginalURL,
+			UID: userID,
+		}
 	}
 
 	return batch, nil
 }
 
-func getResponseData(req []BatchReqData, res map[string]string, baseURL string) []BatchResData {
-	var resData = make([]BatchResData, len(req))
-	for i, data := range req {
+func getResponseData(req []BatchReqData, res []storage.ShortURL, baseURL string) []BatchResData {
+	resData := make([]BatchResData, len(req))
+	urlToCorId := getURLToCorIdMap(req)
+
+	for i, sURL := range res {
 		resData[i] = BatchResData{
-			CorrelationID: data.CorrelationID,
-			ShortURL:      baseURL + "/" + res[data.OriginalURL],
+			CorrelationID: urlToCorId[sURL.URL],
+			ShortURL:      baseURL + "/" + sURL.ID,
 		}
 	}
 
 	return resData
+}
+
+func getURLToCorIdMap(req []BatchReqData) map[string]string {
+	res := make(map[string]string, len(req))
+	for _, data := range req {
+		res[data.OriginalURL] = data.CorrelationID
+	}
+	return res
 }
 
 func fireIncorrectRequest(w http.ResponseWriter, err error) {

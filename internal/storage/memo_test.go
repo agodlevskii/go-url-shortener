@@ -6,13 +6,12 @@ import (
 )
 
 func TestMemoRepo_Add(t *testing.T) {
-	tests := getAddTestCases(NewMemoryRepo())
-
-	for _, tt := range tests {
+	for _, tt := range getAddTestCases() {
 		t.Run(tt.name, func(t *testing.T) {
-			r := tt.repo
-			got, err := r.Add(UserID, tt.batch)
-			assert.Equal(t, tt.want.id, got[tt.want.url])
+			t.Parallel()
+			r := NewMemoryRepo()
+			got, err := r.Add(tt.batch)
+			assert.Equal(t, tt.want.id, got[0].ID)
 			assert.Equal(t, tt.wantErr, err != nil)
 			r.Clear()
 		})
@@ -20,16 +19,14 @@ func TestMemoRepo_Add(t *testing.T) {
 }
 
 func TestMemoRepo_Clear(t *testing.T) {
-	repo := NewMemoryRepo()
-	_, err := repo.Add(UserID, map[string]string{"googl": "https://google.com"})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	tests := getClearTestCases(repo)
-	for _, tt := range tests {
+	for _, tt := range getClearTestCases() {
 		t.Run(tt.name, func(t *testing.T) {
-			r := tt.repo
+			t.Parallel()
+			r := NewMemoryRepo()
+			_, err := r.Add([]ShortURL{{ID: "googl", URL: "https://google.com"}})
+			if err != nil {
+				t.Fatal(err)
+			}
 			r.Clear()
 
 			res, err := r.GetAll(UserID)
@@ -42,41 +39,35 @@ func TestMemoRepo_Clear(t *testing.T) {
 }
 
 func TestMemoRepo_Get(t *testing.T) {
-	repo := NewMemoryRepo()
-	_, err := repo.Add(UserID, map[string]string{"googl": "https://google.com"})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	tests := getGetTestCases(repo)
-	for _, tt := range tests {
+	for _, tt := range getGetTestCases() {
 		t.Run(tt.name, func(t *testing.T) {
-			r := tt.repo
+			t.Parallel()
+			r := NewMemoryRepo()
+			_, err := r.Add([]ShortURL{{ID: "googl", URL: "https://google.com"}})
+			if err != nil {
+				t.Fatal(err)
+			}
+
 			url, err := r.Get(tt.id)
 			assert.Equal(t, tt.wantErr, err != nil)
 			assert.Equal(t, tt.want, url)
 		})
 	}
-
-	repo.Clear()
 }
 
 func TestMemoRepo_Has(t *testing.T) {
-	repo := NewMemoryRepo()
-	_, err := repo.Add(UserID, map[string]string{"googl": "https://google.com"})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	tests := getHasTestCases(repo)
-	for _, tt := range tests {
+	for _, tt := range getHasTestCases() {
 		t.Run(tt.name, func(t *testing.T) {
-			r := tt.repo
+			t.Parallel()
+			r := NewMemoryRepo()
+			_, err := r.Add([]ShortURL{{ID: "googl", URL: "https://google.com"}})
+			if err != nil {
+				t.Fatal(err)
+			}
+
 			has, err := r.Has(tt.id)
 			assert.Equal(t, tt.want, has)
 			assert.Equal(t, tt.wantErr, err != nil)
 		})
 	}
-
-	repo.Clear()
 }

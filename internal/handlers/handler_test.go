@@ -22,7 +22,11 @@ var UserID = "7190e4d4-fd9c-4b"
 func testRequest(t *testing.T, ts *httptest.Server, method, path, data string) (*http.Response, string) {
 	rawURL := ts.URL + path
 	purl, _ := url.Parse(rawURL)
-	jar, _ := cookiejar.New(nil)
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	jar.SetCookies(purl, []*http.Cookie{
 		{Name: configs.UserCookieName, Value: UserIDEnc, Path: "/"},
 	})

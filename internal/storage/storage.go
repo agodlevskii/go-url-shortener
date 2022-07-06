@@ -1,14 +1,16 @@
 package storage
 
-type URLRes struct {
-	url string
-	uid string
+type ShortURL struct {
+	ID  string
+	URL string
+	UID string
 }
 
 type Storager interface {
-	Add(userID string, batch map[string]string) (map[string]string, error)
+	Add(batch []ShortURL) ([]ShortURL, error)
 	Has(id string) (bool, error)
 	Get(id string) (string, error)
-	GetAll(userID string) (map[string]string, error)
+	GetAll(userID string) ([]ShortURL, error)
 	Clear()
+	Ping() bool
 }

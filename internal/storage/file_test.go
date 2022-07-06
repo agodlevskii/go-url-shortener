@@ -34,98 +34,67 @@ func TestNewFileRepo(t *testing.T) {
 			got, err := NewFileRepo(tt.args.filename)
 			assert.Equal(t, tt.wantErr, err != nil)
 			assert.Equalf(t, tt.want, got.filename, "NewFileRepo(%v)", tt.args.filename)
+			got.Clear()
 		})
 	}
 }
 
 func TestFileRepo_Add(t *testing.T) {
-	repo, err := NewFileRepo("testfile")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	tests := getAddTestCases(repo)
-	for _, tt := range tests {
+	for _, tt := range getAddTestCases() {
 		t.Run(tt.name, func(t *testing.T) {
-			r := tt.repo
-			got, err := r.Add(UserID, tt.batch)
-			assert.Equal(t, tt.want.id, got[tt.want.url])
-			assert.Equal(t, tt.wantErr, err != nil)
-			r.Clear()
-		})
-	}
-}
-
-func TestFileRepo_Clear(t *testing.T) {
-	repo, err := NewFileRepo("testfile")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = repo.Add(UserID, map[string]string{"googl": "https://google.com"})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	tests := getClearTestCases(repo)
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			r := tt.repo
-			r.Clear()
-
-			res, err := r.GetAll(UserID)
+			t.Parallel()
+			repo, err := NewFileRepo("testfile_add")
 			if err != nil {
-				t.Error(err)
+				t.Fatal(err)
 			}
-			assert.Zero(t, len(res))
+
+			got, err := repo.Add(tt.batch)
+			assert.Equal(t, tt.want.id, got[0].ID)
+			assert.Equal(t, tt.wantErr, err != nil)
+			repo.Clear()
 		})
 	}
 }
 
 func TestFileRepo_Get(t *testing.T) {
-	repo, err := NewFileRepo("testfile")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = repo.Add(UserID, map[string]string{"googl": "https://google.com"})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	tests := getGetTestCases(repo)
-	for _, tt := range tests {
+	for _, tt := range getGetTestCases() {
 		t.Run(tt.name, func(t *testing.T) {
-			r := tt.repo
-			url, err := r.Get(tt.id)
+			t.Parallel()
+			repo, err := NewFileRepo("testfile_get")
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			_, err = repo.Add([]ShortURL{{ID: "googl", URL: "https://google.com"}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			url, err := repo.Get(tt.id)
 			assert.Equal(t, tt.wantErr, err != nil)
 			assert.Equal(t, tt.want, url)
+			repo.Clear()
 		})
 	}
-
-	repo.Clear()
 }
 
 func TestFileRepo_Has(t *testing.T) {
-	repo, err := NewFileRepo("testfile")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = repo.Add(UserID, map[string]string{"googl": "https://google.com"})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	tests := getHasTestCases(repo)
-	for _, tt := range tests {
+	for _, tt := range getHasTestCases() {
 		t.Run(tt.name, func(t *testing.T) {
-			r := tt.repo
-			has, err := r.Has(tt.id)
+			t.Parallel()
+			repo, err := NewFileRepo("testfile_has")
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			_, err = repo.Add([]ShortURL{{ID: "googl", URL: "https://google.com"}})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			has, err := repo.Has(tt.id)
 			assert.Equal(t, tt.want, has)
 			assert.Equal(t, tt.wantErr, err != nil)
+			repo.Clear()
 		})
 	}
-
-	repo.Clear()
 }

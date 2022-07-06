@@ -24,7 +24,7 @@ func TestWebPostHandler(t *testing.T) {
 	)
 
 	args := struct {
-		repo    storage.MemoRepo
+		repo    *storage.MemoRepo
 		baseURL string
 	}{
 		repo:    storage.NewMemoryRepo(),

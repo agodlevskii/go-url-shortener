@@ -21,7 +21,7 @@ func TestGetFullURL(t *testing.T) {
 			name    string
 			want    want
 			id      string
-			storage map[string]map[string]string
+			storage []storage.ShortURL
 		}
 	)
 
@@ -44,11 +44,9 @@ func TestGetFullURL(t *testing.T) {
 			},
 		},
 		{
-			name: "Correct ID parameter value",
-			id:   "googl",
-			storage: map[string]map[string]string{
-				UserID: {"googl": "https://google.com"},
-			},
+			name:    "Correct ID parameter value",
+			id:      "googl",
+			storage: []storage.ShortURL{{ID: "googl", URL: "https://google.com", UID: UserID}},
 			want: want{
 				code:        http.StatusTemporaryRedirect,
 				resp:        `https://google.com`,
@@ -58,11 +56,6 @@ func TestGetFullURL(t *testing.T) {
 		},
 	}
 
-	db := storage.NewMemoryRepo()
-	r := NewShortenerRouter(db, "https://test.url")
-	ts := httptest.NewServer(r)
-	defer ts.Close()
-
 	err := os.Chdir("../../")
 	if err != nil {
 		t.Error(err)
@@ -70,16 +63,15 @@ func TestGetFullURL(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if len(tt.storage) > 0 {
-				for uid, urls := range tt.storage {
-					for id, url := range urls {
-						_, err = db.Add(uid, map[string]string{id: url})
-						if err != nil {
-							t.Error(err)
-						}
-					}
-				}
+			db := storage.NewMemoryRepo()
+			_, err = db.Add(tt.storage)
+			if err != nil {
+				t.Error(err)
 			}
+
+			r := NewShortenerRouter(db, "https://test.url")
+			ts := httptest.NewServer(r)
+			defer ts.Close()
 
 			path := "/"
 			if tt.id != "" {
@@ -96,10 +88,6 @@ func TestGetFullURL(t *testing.T) {
 			}
 
 			defer resp.Body.Close()
-
-			if len(tt.storage) > 0 {
-				db.Clear()
-			}
 		})
 	}
 }

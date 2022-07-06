@@ -1,24 +1,17 @@
 package handlers
 
 import (
-	"context"
-	"github.com/jackc/pgx/v4"
-	"go-url-shortener/internal"
+	_ "github.com/jackc/pgx/v4"
+	"go-url-shortener/internal/storage"
 	"net/http"
-	"time"
 )
 
-func Ping() func(w http.ResponseWriter, r *http.Request) {
+func Ping(db storage.Storager) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
-
-		conn, err := pgx.Connect(ctx, internal.Config.DBURL)
-		if err != nil {
+		if ping := db.Ping(); !ping {
 			http.Error(w, "couldn't connect to DB", http.StatusInternalServerError)
 			return
 		}
-		defer conn.Close(ctx)
 
 		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusOK)
