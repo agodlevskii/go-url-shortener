@@ -1,6 +1,5 @@
 package configs
 
 const (
-	Host = "localhost"
-	Port = "8080"
+	UserCookieName = "user_id"
 )

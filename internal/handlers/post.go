@@ -5,6 +5,7 @@ import (
 	"errors"
 	log "github.com/sirupsen/logrus"
 	"go-url-shortener/internal/generators"
+	"go-url-shortener/internal/middlewares"
 	"go-url-shortener/internal/storage"
 	"go-url-shortener/internal/validators"
 	"io"
@@ -17,6 +18,11 @@ type PostRequest struct {
 
 type PostResponse struct {
 	Result string `json:"result"`
+}
+
+type UserLink struct {
+	Short    string `json:"short_url"`
+	Original string `json:"original_url"`
 }
 
 func APIPostHandler(db storage.Storager, baseURL string) func(w http.ResponseWriter, r *http.Request) {
@@ -34,7 +40,13 @@ func APIPostHandler(db storage.Storager, baseURL string) func(w http.ResponseWri
 			return
 		}
 
-		shortURI, err := shortenURL(db, uri, baseURL)
+		userID, err := middlewares.GetUserID(r)
+		if err != nil {
+			http.Error(w, "Cannot identify a user", http.StatusInternalServerError)
+			return
+		}
+
+		shortURI, chg, err := shortenURL(db, userID, uri, baseURL)
 		if err != nil {
 			log.Error(err)
 			http.Error(w, "Couldn't generate the short URL. Please try again later.", http.StatusInternalServerError)
@@ -43,7 +55,11 @@ func APIPostHandler(db storage.Storager, baseURL string) func(w http.ResponseWri
 
 		res := PostResponse{Result: shortURI}
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
+		if chg {
+			w.WriteHeader(http.StatusConflict)
+		} else {
+			w.WriteHeader(http.StatusCreated)
+		}
 
 		err = json.NewEncoder(w).Encode(res)
 		if err != nil {
@@ -66,7 +82,13 @@ func WebPostHandler(db storage.Storager, baseURL string) func(w http.ResponseWri
 			return
 		}
 
-		res, err := shortenURL(db, uri, baseURL)
+		userID, err := middlewares.GetUserID(r)
+		if err != nil {
+			http.Error(w, "Cannot identify a user", http.StatusInternalServerError)
+			return
+		}
+
+		res, chg, err := shortenURL(db, userID, uri, baseURL)
 		if err != nil {
 			log.Error(err)
 			http.Error(w, "Couldn't generate the short URL. Please try again later.", http.StatusInternalServerError)
@@ -74,6 +96,11 @@ func WebPostHandler(db storage.Storager, baseURL string) func(w http.ResponseWri
 		}
 
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		if chg {
+			w.WriteHeader(http.StatusConflict)
+		} else {
+			w.WriteHeader(http.StatusCreated)
+		}
 		w.WriteHeader(http.StatusCreated)
 		_, err = w.Write([]byte(res))
 		if err != nil {
@@ -82,18 +109,27 @@ func WebPostHandler(db storage.Storager, baseURL string) func(w http.ResponseWri
 	}
 }
 
-func shortenURL(db storage.Storager, uri string, baseURL string) (string, error) {
+func shortenURL(db storage.Storager, userID, uri, baseURL string) (string, bool, error) {
 	if !validators.IsURLStringValid(uri) {
-		return "", errors.New("you provided an incorrect URL")
+		return "", false, errors.New("you provided an incorrect URL")
 	}
 
 	id, err := generators.GenerateID(db, 7)
 	if err != nil {
-		return "", err
-	}
-	if err = db.Add(id, uri); err != nil {
-		return "", err
+		return "", false, err
 	}
 
-	return baseURL + "/" + id, nil
+	res, err := db.Add([]storage.ShortURL{
+		{
+			ID:  id,
+			URL: uri,
+			UID: userID,
+		},
+	})
+	if err != nil {
+		return "", false, err
+	}
+
+	url := baseURL + "/" + res[0].ID
+	return url, res[0].ID != id, nil
 }

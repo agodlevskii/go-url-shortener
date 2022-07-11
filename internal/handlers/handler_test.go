@@ -5,19 +5,37 @@ import (
 	"errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go-url-shortener/configs"
 	"go-url-shortener/internal/storage"
 	"io"
 	"net/http"
+	"net/http/cookiejar"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 )
 
+var UserIDEnc = "4b529d6712a1d59f62a87dc4fa54f332"
+var UserID = "7190e4d4-fd9c-4b"
+
 func testRequest(t *testing.T, ts *httptest.Server, method, path, data string) (*http.Response, string) {
+	rawURL := ts.URL + path
+	purl, _ := url.Parse(rawURL)
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	jar.SetCookies(purl, []*http.Cookie{
+		{Name: configs.UserCookieName, Value: UserIDEnc, Path: "/"},
+	})
+
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
+		Jar: jar,
 	}
 
 	var body io.Reader
@@ -25,7 +43,7 @@ func testRequest(t *testing.T, ts *httptest.Server, method, path, data string) (
 		body = io.NopCloser(bytes.NewBufferString(data))
 	}
 
-	req, err := http.NewRequest(method, ts.URL+path, body)
+	req, err := http.NewRequest(method, rawURL, body)
 	require.NoError(t, err)
 
 	resp, err := client.Do(req)
