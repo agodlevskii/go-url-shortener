@@ -19,6 +19,7 @@ func GetFullURL(db storage.Storager) func(w http.ResponseWriter, r *http.Request
 
 		if sURL.Deleted {
 			http.Error(w, "The requested URL is not available.", http.StatusGone)
+			return
 		}
 
 		http.Redirect(w, r, sURL.URL, http.StatusTemporaryRedirect)

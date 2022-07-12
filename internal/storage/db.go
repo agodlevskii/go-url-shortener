@@ -6,7 +6,6 @@ import (
 	"github.com/jackc/pgx/v4"
 	_ "github.com/jackc/pgx/v4/stdlib"
 	log "github.com/sirupsen/logrus"
-	"strings"
 )
 
 type DBRepo struct {
@@ -32,7 +31,7 @@ func (repo DBRepo) Add(batch []ShortURL) ([]ShortURL, error) {
 		return nil, err
 	}
 
-	stmt, err := tx.Prepare(`INSERT INTO urls(id, url, uid) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING RETURNING id`)
+	stmt, err := tx.Prepare(`INSERT INTO urls(id, url, uid, deleted) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING RETURNING id`)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +41,7 @@ func (repo DBRepo) Add(batch []ShortURL) ([]ShortURL, error) {
 	for i, sURL := range batch {
 		var newID string
 
-		err = stmt.QueryRow(sURL.ID, sURL.URL, sURL.UID).Scan(&newID)
+		err = stmt.QueryRow(sURL.ID, sURL.URL, sURL.UID, false).Scan(&newID)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) || err.Error() == "sql: no rows in result set" {
 				err = repo.db.QueryRow("SELECT id FROM urls WHERE url = $1", sURL.URL).Scan(&newID)
@@ -81,7 +80,7 @@ func (repo DBRepo) Has(id string) (bool, error) {
 
 func (repo DBRepo) Get(id string) (ShortURL, error) {
 	var sURL ShortURL
-	err := repo.db.QueryRow("SELECT * FROM urls WHERE id = $1", id).Scan(&sURL)
+	err := repo.db.QueryRow("SELECT * FROM urls WHERE id = $1", id).Scan(&sURL.ID, &sURL.URL, &sURL.UID, &sURL.Deleted)
 	return sURL, err
 }
 
@@ -98,7 +97,7 @@ func (repo DBRepo) GetAll(userID string) ([]ShortURL, error) {
 	urls := make([]ShortURL, 0)
 	for rows.Next() {
 		var sURL ShortURL
-		err = rows.Scan(&sURL.ID, &sURL.URL, &sURL.UID)
+		err = rows.Scan(&sURL.ID, &sURL.URL, &sURL.UID, &sURL.Deleted)
 		if err != nil {
 			return nil, err
 		}
@@ -127,6 +126,6 @@ func (repo DBRepo) Delete(batch []ShortURL) error {
 		ids[i] = sUrl.ID
 	}
 
-	_, err := repo.db.Exec("UPDATE urls SET deleted = true WHERE uid = $1 AND id IN ($2)", userID, strings.Join(ids, ","))
+	_, err := repo.db.Exec("UPDATE urls SET deleted = true WHERE uid = $1 AND id = any($2)", userID, ids)
 	return err
 }

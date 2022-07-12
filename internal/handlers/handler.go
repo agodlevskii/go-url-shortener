@@ -24,7 +24,10 @@ func NewShortenerRouter(db storage.Storager, baseURL string) *chi.Mux {
 			})
 
 			r.Route("/user", func(r chi.Router) {
-				r.Get("/urls", UserURLsHandler(db, baseURL))
+				r.Route("/urls", func(r chi.Router) {
+					r.Get("/", UserURLsHandler(db, baseURL))
+					r.Delete("/", DeleteShortURLs(db))
+				})
 			})
 		})
 

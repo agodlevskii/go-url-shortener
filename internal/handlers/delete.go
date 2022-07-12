@@ -32,7 +32,14 @@ func DeleteShortURLs(db storage.Storager) func(w http.ResponseWriter, r *http.Re
 			}
 		}
 
+		err = db.Delete(batch)
+		if err != nil {
+			log.Error(err)
+			http.Error(w, "Something went wrong.", http.StatusInternalServerError)
+			return
+		}
+
 		w.WriteHeader(http.StatusAccepted)
-		w.Write([]byte(""))
+		w.Write([]byte("Success"))
 	}
 }
