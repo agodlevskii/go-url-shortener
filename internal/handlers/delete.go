@@ -27,9 +27,9 @@ func DeleteShortURLs(db storage.Storager, poolSize int) func(w http.ResponseWrit
 		}
 
 		var ids []string
-		if err = json.NewDecoder(r.Body).Decode(&ids); err != nil {
+		if err = json.NewDecoder(r.Body).Decode(&ids); err != nil || len(ids) == 0 {
 			log.Error(err)
-			http.Error(w, "Couldn't deleteURLs the records", http.StatusBadRequest)
+			http.Error(w, "Please provide a valid list of IDs.", http.StatusBadRequest)
 			return
 		}
 

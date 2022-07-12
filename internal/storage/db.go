@@ -41,7 +41,7 @@ func (repo DBRepo) Add(batch []ShortURL) ([]ShortURL, error) {
 	for i, sURL := range batch {
 		var newID string
 
-		err = stmt.QueryRow(sURL.ID, sURL.URL, sURL.UID, false).Scan(&newID)
+		err = stmt.QueryRow(sURL.ID, sURL.URL, sURL.UID, sURL.Deleted).Scan(&newID)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) || err.Error() == "sql: no rows in result set" {
 				err = repo.db.QueryRow("SELECT id FROM urls WHERE url = $1", sURL.URL).Scan(&newID)
@@ -120,6 +120,10 @@ func (repo DBRepo) Ping() bool {
 }
 
 func (repo DBRepo) Delete(batch []ShortURL) error {
+	if len(batch) == 0 {
+		return nil
+	}
+
 	userID := batch[0].UID
 	ids := make([]string, len(batch))
 	for i, sURL := range batch {
