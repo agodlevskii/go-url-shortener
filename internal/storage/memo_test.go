@@ -71,3 +71,28 @@ func TestMemoRepo_Has(t *testing.T) {
 		})
 	}
 }
+
+func TestMemoRepo_Delete(t *testing.T) {
+	for _, tt := range getDeleteTestCases() {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			r := NewMemoryRepo()
+			_, err := r.Add(tt.batch)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			err = r.Delete(tt.batch)
+			assert.Equal(t, tt.wantErr, err != nil)
+
+			for _, sURL := range tt.batch {
+				stored, err := r.Get(sURL.ID)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				assert.Equal(t, tt.wantDelState, stored.Deleted)
+			}
+		})
+	}
+}

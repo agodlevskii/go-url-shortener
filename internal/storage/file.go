@@ -3,8 +3,10 @@ package storage
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	log "github.com/sirupsen/logrus"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -37,7 +39,7 @@ func (f FileRepo) Add(batch []ShortURL) ([]ShortURL, error) {
 
 	w := bufio.NewWriter(file)
 	for _, sURL := range batch {
-		_, err = w.WriteString(sURL.ID + " : " + sURL.URL + " : " + sURL.UID + " : false\n")
+		_, err = w.WriteString(sURL.ID + " : " + sURL.URL + " : " + sURL.UID + " : " + strconv.FormatBool(sURL.Deleted) + "\n")
 		if err != nil {
 			return nil, err
 		}
@@ -63,6 +65,7 @@ func (f FileRepo) Get(id string) (ShortURL, error) {
 	for scanner.Scan() {
 		text := scanner.Text()
 		data := strings.Split(text, " : ")
+		fmt.Println(text)
 
 		if !isEntryValid(data) {
 			return ShortURL{}, errors.New("malformed file: " + file.Name())
@@ -174,7 +177,6 @@ func (f FileRepo) Delete(batch []ShortURL) error {
 		}
 		return err
 	}
-	defer file.Close()
 
 	IDtoSURL := make(map[string]ShortURL, len(batch))
 	for _, v := range batch {
@@ -190,7 +192,7 @@ func (f FileRepo) Delete(batch []ShortURL) error {
 			return errors.New("malformed file: " + file.Name())
 		}
 
-		if sURL := IDtoSURL[data[0]]; sURL.UID == "" {
+		if sURL := IDtoSURL[data[0]]; sURL.UID != "" {
 			restore = append(restore, ShortURL{
 				ID:      data[0],
 				URL:     data[1],
@@ -204,6 +206,7 @@ func (f FileRepo) Delete(batch []ShortURL) error {
 		return scanner.Err()
 	}
 
+	file.Close()
 	f.Clear()
 	if _, err = f.Add(restore); err != nil {
 		return err

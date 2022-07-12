@@ -122,8 +122,8 @@ func (repo DBRepo) Ping() bool {
 func (repo DBRepo) Delete(batch []ShortURL) error {
 	userID := batch[0].UID
 	ids := make([]string, len(batch))
-	for i, sUrl := range batch {
-		ids[i] = sUrl.ID
+	for i, sURL := range batch {
+		ids[i] = sURL.ID
 	}
 
 	_, err := repo.db.Exec("UPDATE urls SET deleted = true WHERE uid = $1 AND id = any($2)", userID, ids)
