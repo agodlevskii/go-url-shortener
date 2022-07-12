@@ -65,13 +65,13 @@ func TestFileRepo_Get(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			_, err = repo.Add([]ShortURL{{ID: "googl", URL: "https://google.com"}})
+			_, err = repo.Add([]ShortURL{{ID: "googl", URL: "https://google.com", UID: UserID}})
 			if err != nil {
 				t.Fatal(err)
 			}
-			url, err := repo.Get(tt.id)
+			sURL, err := repo.Get(tt.id)
 			assert.Equal(t, tt.wantErr, err != nil)
-			assert.Equal(t, tt.want, url)
+			assert.Equal(t, tt.want, sURL.URL)
 			repo.Clear()
 		})
 	}
@@ -86,7 +86,7 @@ func TestFileRepo_Has(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			_, err = repo.Add([]ShortURL{{ID: "googl", URL: "https://google.com"}})
+			_, err = repo.Add([]ShortURL{{ID: "googl", URL: "https://google.com", UID: UserID}})
 			if err != nil {
 				t.Fatal(err)
 			}

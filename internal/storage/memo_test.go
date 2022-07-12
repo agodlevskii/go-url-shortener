@@ -48,9 +48,9 @@ func TestMemoRepo_Get(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			url, err := r.Get(tt.id)
+			sURL, err := r.Get(tt.id)
 			assert.Equal(t, tt.wantErr, err != nil)
-			assert.Equal(t, tt.want, url)
+			assert.Equal(t, tt.want, sURL.URL)
 		})
 	}
 }

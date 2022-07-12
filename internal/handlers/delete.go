@@ -8,38 +8,52 @@ import (
 	"net/http"
 )
 
-func DeleteShortURLs(db storage.Storager) func(w http.ResponseWriter, r *http.Request) {
+func DeleteShortURLs(db storage.Storager, poolSize int) func(w http.ResponseWriter, r *http.Request) {
+	pool := make(chan func(), poolSize)
+	for i := 0; i < poolSize; i++ {
+		go func() {
+			for f := range pool {
+				f()
+			}
+		}()
+	}
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := middlewares.GetUserID(r)
 		if err != nil {
 			log.Error(err)
-			http.Error(w, "couldn't identify the user", http.StatusInternalServerError)
+			http.Error(w, "couldn't identify the user", http.StatusBadRequest)
 			return
 		}
 
-		var req []string
-		if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
+		var ids []string
+		if err = json.NewDecoder(r.Body).Decode(&ids); err != nil {
 			log.Error(err)
-			http.Error(w, "Couldn't delete the records", http.StatusInternalServerError)
+			http.Error(w, "Couldn't deleteURLs the records", http.StatusBadRequest)
 			return
 		}
 
-		batch := make([]storage.ShortURL, len(req))
-		for i, v := range req {
-			batch[i] = storage.ShortURL{
-				ID:  v,
-				UID: userID,
+		go func() {
+			pool <- func() {
+				deleteURLs(db, userID, ids)
 			}
-		}
-
-		err = db.Delete(batch)
-		if err != nil {
-			log.Error(err)
-			http.Error(w, "Something went wrong.", http.StatusInternalServerError)
-			return
-		}
+		}()
 
 		w.WriteHeader(http.StatusAccepted)
-		w.Write([]byte("Success"))
+	}
+}
+
+func deleteURLs(db storage.Storager, userID string, ids []string) {
+	batch := make([]storage.ShortURL, len(ids))
+	for i, v := range ids {
+		batch[i] = storage.ShortURL{
+			ID:  v,
+			UID: userID,
+		}
+	}
+
+	err := db.Delete(batch)
+	if err != nil {
+		log.Error(err)
 	}
 }

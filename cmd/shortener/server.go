@@ -19,7 +19,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	r := handlers.NewShortenerRouter(repo, cfg.BaseURL)
+	r := handlers.NewShortenerRouter(repo, cfg.BaseURL, 10)
 	err = http.ListenAndServe(cfg.Addr, r)
 	if err != nil {
 		log.Fatal(err)

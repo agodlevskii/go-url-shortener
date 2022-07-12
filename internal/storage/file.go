@@ -37,7 +37,7 @@ func (f FileRepo) Add(batch []ShortURL) ([]ShortURL, error) {
 
 	w := bufio.NewWriter(file)
 	for _, sURL := range batch {
-		_, err = w.WriteString(sURL.ID + " : " + sURL.URL + " : " + sURL.UID + "false\n")
+		_, err = w.WriteString(sURL.ID + " : " + sURL.URL + " : " + sURL.UID + " : false\n")
 		if err != nil {
 			return nil, err
 		}
@@ -143,6 +143,7 @@ func (f FileRepo) Has(id string) (bool, error) {
 	for ; scanner.Scan(); counter++ {
 		data := strings.Split(scanner.Text(), " : ")
 		if !isEntryValid(data) {
+			log.Error(data)
 			return false, nil
 		}
 
