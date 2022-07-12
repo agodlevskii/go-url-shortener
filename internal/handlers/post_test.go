@@ -60,7 +60,7 @@ func TestWebPostHandler(t *testing.T) {
 		},
 	}
 
-	r := NewShortenerRouter(args.repo, args.baseURL)
+	r := NewShortenerRouter(args.repo, args.baseURL, 10)
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
@@ -132,7 +132,7 @@ func TestAPIPostHandler(t *testing.T) {
 		},
 	}
 
-	r := NewShortenerRouter(args.repo, args.baseURL)
+	r := NewShortenerRouter(args.repo, args.baseURL, 10)
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
