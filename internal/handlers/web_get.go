@@ -10,13 +10,18 @@ import (
 func GetFullURL(db storage.Storager) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := chi.URLParam(r, "id")
-		url, err := db.Get(id)
+		sURL, err := db.Get(id)
 		if err != nil {
 			log.Error(err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
-		http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+		if sURL.Deleted {
+			http.Error(w, "The requested URL is not available.", http.StatusGone)
+			return
+		}
+
+		http.Redirect(w, r, sURL.URL, http.StatusTemporaryRedirect)
 	}
 }

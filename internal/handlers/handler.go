@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func NewShortenerRouter(db storage.Storager, baseURL string) *chi.Mux {
+func NewShortenerRouter(db storage.Storager, baseURL string, poolSize int) *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middlewares.Authorize, middlewares.Compress, middlewares.Decompress)
 
@@ -24,7 +24,10 @@ func NewShortenerRouter(db storage.Storager, baseURL string) *chi.Mux {
 			})
 
 			r.Route("/user", func(r chi.Router) {
-				r.Get("/urls", UserURLsHandler(db, baseURL))
+				r.Route("/urls", func(r chi.Router) {
+					r.Get("/", UserURLsHandler(db, baseURL))
+					r.Delete("/", DeleteShortURLs(db, poolSize))
+				})
 			})
 		})
 

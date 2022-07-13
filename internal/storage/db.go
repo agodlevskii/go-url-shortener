@@ -18,7 +18,7 @@ func NewDBRepo(url string) (DBRepo, error) {
 		return DBRepo{}, err
 	}
 
-	_, err = db.Exec("CREATE TABLE IF NOT EXISTS urls (id VARCHAR(10), url VARCHAR(255), uid VARCHAR(16), UNIQUE(id), UNIQUE (url))")
+	_, err = db.Exec("CREATE TABLE IF NOT EXISTS urls (id VARCHAR(10), url VARCHAR(255), uid VARCHAR(16), deleted boolean, UNIQUE(id), UNIQUE (url))")
 	if err != nil {
 		return DBRepo{}, err
 	}
@@ -31,7 +31,7 @@ func (repo DBRepo) Add(batch []ShortURL) ([]ShortURL, error) {
 		return nil, err
 	}
 
-	stmt, err := tx.Prepare(`INSERT INTO urls(id, url, uid) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING RETURNING id`)
+	stmt, err := tx.Prepare(`INSERT INTO urls(id, url, uid, deleted) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING RETURNING id`)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ func (repo DBRepo) Add(batch []ShortURL) ([]ShortURL, error) {
 	for i, sURL := range batch {
 		var newID string
 
-		err = stmt.QueryRow(sURL.ID, sURL.URL, sURL.UID).Scan(&newID)
+		err = stmt.QueryRow(sURL.ID, sURL.URL, sURL.UID, sURL.Deleted).Scan(&newID)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) || err.Error() == "sql: no rows in result set" {
 				err = repo.db.QueryRow("SELECT id FROM urls WHERE url = $1", sURL.URL).Scan(&newID)
@@ -78,10 +78,10 @@ func (repo DBRepo) Has(id string) (bool, error) {
 	return cnt != 0, err
 }
 
-func (repo DBRepo) Get(id string) (string, error) {
-	var url string
-	err := repo.db.QueryRow("SELECT url FROM urls WHERE id = $1", id).Scan(&url)
-	return url, err
+func (repo DBRepo) Get(id string) (ShortURL, error) {
+	var sURL ShortURL
+	err := repo.db.QueryRow("SELECT * FROM urls WHERE id = $1", id).Scan(&sURL.ID, &sURL.URL, &sURL.UID, &sURL.Deleted)
+	return sURL, err
 }
 
 func (repo DBRepo) GetAll(userID string) ([]ShortURL, error) {
@@ -97,7 +97,7 @@ func (repo DBRepo) GetAll(userID string) ([]ShortURL, error) {
 	urls := make([]ShortURL, 0)
 	for rows.Next() {
 		var sURL ShortURL
-		err = rows.Scan(&sURL.ID, &sURL.URL, &sURL.UID)
+		err = rows.Scan(&sURL.ID, &sURL.URL, &sURL.UID, &sURL.Deleted)
 		if err != nil {
 			return nil, err
 		}
@@ -109,9 +109,27 @@ func (repo DBRepo) GetAll(userID string) ([]ShortURL, error) {
 }
 
 func (repo DBRepo) Clear() {
-	repo.db.Exec("DELETE FROM urls")
+	_, err := repo.db.Exec("UPDATE urls SET deleted = true")
+	if err != nil {
+		log.Error(err)
+	}
 }
 
 func (repo DBRepo) Ping() bool {
 	return repo.db.Ping() == nil
+}
+
+func (repo DBRepo) Delete(batch []ShortURL) error {
+	if len(batch) == 0 {
+		return nil
+	}
+
+	userID := batch[0].UID
+	ids := make([]string, len(batch))
+	for i, sURL := range batch {
+		ids[i] = sURL.ID
+	}
+
+	_, err := repo.db.Exec("UPDATE urls SET deleted = true WHERE uid = $1 AND id = any($2)", userID, ids)
+	return err
 }

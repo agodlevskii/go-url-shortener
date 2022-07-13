@@ -65,13 +65,13 @@ func TestFileRepo_Get(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			_, err = repo.Add([]ShortURL{{ID: "googl", URL: "https://google.com"}})
+			_, err = repo.Add([]ShortURL{{ID: "googl", URL: "https://google.com", UID: UserID}})
 			if err != nil {
 				t.Fatal(err)
 			}
-			url, err := repo.Get(tt.id)
+			sURL, err := repo.Get(tt.id)
 			assert.Equal(t, tt.wantErr, err != nil)
-			assert.Equal(t, tt.want, url)
+			assert.Equal(t, tt.want, sURL.URL)
 			repo.Clear()
 		})
 	}
@@ -86,7 +86,7 @@ func TestFileRepo_Has(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			_, err = repo.Add([]ShortURL{{ID: "googl", URL: "https://google.com"}})
+			_, err = repo.Add([]ShortURL{{ID: "googl", URL: "https://google.com", UID: UserID}})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -95,6 +95,35 @@ func TestFileRepo_Has(t *testing.T) {
 			assert.Equal(t, tt.want, has)
 			assert.Equal(t, tt.wantErr, err != nil)
 			repo.Clear()
+		})
+	}
+}
+
+func TestFileRepo_Delete(t *testing.T) {
+	for _, tt := range getDeleteTestCases() {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			r, err := NewFileRepo("testfile_has")
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			_, err = r.Add(tt.batch)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			err = r.Delete(tt.batch)
+			assert.Equal(t, tt.wantErr, err != nil)
+
+			for _, sURL := range tt.batch {
+				stored, err := r.Get(sURL.ID)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				assert.Equal(t, tt.wantDelState, stored.Deleted)
+			}
 		})
 	}
 }

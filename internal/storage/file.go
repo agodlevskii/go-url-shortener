@@ -3,8 +3,10 @@ package storage
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	log "github.com/sirupsen/logrus"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -37,7 +39,7 @@ func (f FileRepo) Add(batch []ShortURL) ([]ShortURL, error) {
 
 	w := bufio.NewWriter(file)
 	for _, sURL := range batch {
-		_, err = w.WriteString(sURL.ID + " : " + sURL.URL + " : " + sURL.UID + "\n")
+		_, err = w.WriteString(sURL.ID + " : " + sURL.URL + " : " + sURL.UID + " : " + strconv.FormatBool(sURL.Deleted) + "\n")
 		if err != nil {
 			return nil, err
 		}
@@ -52,10 +54,10 @@ func (f FileRepo) Add(batch []ShortURL) ([]ShortURL, error) {
 	return res, file.Close()
 }
 
-func (f FileRepo) Get(id string) (string, error) {
+func (f FileRepo) Get(id string) (ShortURL, error) {
 	file, err := os.OpenFile(f.filename, os.O_RDONLY|os.O_CREATE, 0777)
 	if err != nil {
-		return "", err
+		return ShortURL{}, err
 	}
 	defer file.Close()
 
@@ -63,21 +65,27 @@ func (f FileRepo) Get(id string) (string, error) {
 	for scanner.Scan() {
 		text := scanner.Text()
 		data := strings.Split(text, " : ")
+		fmt.Println(text)
 
-		if len(data) < 3 {
-			return "", errors.New("malformed file: " + file.Name())
+		if !isEntryValid(data) {
+			return ShortURL{}, errors.New("malformed file: " + file.Name())
 		}
 
 		if data[0] == id {
-			return data[1], nil
+			return ShortURL{
+				ID:      data[0],
+				URL:     data[1],
+				UID:     data[2],
+				Deleted: data[3] == "true",
+			}, nil
 		}
 	}
 
 	if scanner.Err() != nil {
-		return "", scanner.Err()
+		return ShortURL{}, scanner.Err()
 	}
 
-	return "", errors.New("no matching URL found: " + id)
+	return ShortURL{}, errors.New("no matching URL found: " + id)
 }
 
 func (f FileRepo) GetAll(userID string) ([]ShortURL, error) {
@@ -95,15 +103,16 @@ func (f FileRepo) GetAll(userID string) ([]ShortURL, error) {
 	for ; scanner.Scan(); counter++ {
 		data := strings.Split(scanner.Text(), " : ")
 
-		if len(data) < 3 {
+		if !isEntryValid(data) {
 			return nil, errors.New("malformed file: " + file.Name())
 		}
 
 		if data[2] == userID {
 			urls = append(urls, ShortURL{
-				ID:  data[0],
-				URL: data[1],
-				UID: userID,
+				ID:      data[0],
+				URL:     data[1],
+				UID:     userID,
+				Deleted: data[3] == "true",
 			})
 		}
 	}
@@ -136,7 +145,8 @@ func (f FileRepo) Has(id string) (bool, error) {
 
 	for ; scanner.Scan(); counter++ {
 		data := strings.Split(scanner.Text(), " : ")
-		if len(data) < 3 {
+		if !isEntryValid(data) {
+			log.Error(data)
 			return false, nil
 		}
 
@@ -157,4 +167,54 @@ func (f FileRepo) Clear() {
 func (f FileRepo) Ping() bool {
 	_, err := os.Stat(f.filename)
 	return err == nil
+}
+
+func (f FileRepo) Delete(batch []ShortURL) error {
+	file, err := os.OpenFile(f.filename, os.O_RDONLY, 0777)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil
+		}
+		return err
+	}
+
+	IDtoSURL := make(map[string]ShortURL, len(batch))
+	for _, v := range batch {
+		IDtoSURL[v.ID] = v
+	}
+
+	restore := make([]ShortURL, 0)
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		data := strings.Split(scanner.Text(), " : ")
+
+		if !isEntryValid(data) {
+			return errors.New("malformed file: " + file.Name())
+		}
+
+		if sURL := IDtoSURL[data[0]]; sURL.UID != "" {
+			restore = append(restore, ShortURL{
+				ID:      data[0],
+				URL:     data[1],
+				UID:     data[2],
+				Deleted: sURL.UID == data[2],
+			})
+		}
+	}
+
+	if scanner.Err() != nil {
+		return scanner.Err()
+	}
+
+	file.Close()
+	f.Clear()
+	if _, err = f.Add(restore); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func isEntryValid(entry []string) bool {
+	return len(entry) == 4
 }

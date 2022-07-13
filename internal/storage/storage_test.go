@@ -32,6 +32,13 @@ type HasTestCase struct {
 	wantErr bool
 }
 
+type DeleteTestCase struct {
+	name         string
+	batch        []ShortURL
+	wantDelState bool
+	wantErr      bool
+}
+
 func getAddTestCases() []AddTestCase {
 	return []AddTestCase{
 		{
@@ -78,6 +85,28 @@ func getHasTestCases() []HasTestCase {
 			name: "Existing ID",
 			id:   "googl",
 			want: true,
+		},
+	}
+}
+
+func getDeleteTestCases() []DeleteTestCase {
+	return []DeleteTestCase{
+		{
+			name: "Single entry",
+			batch: []ShortURL{
+				{ID: "1", URL: "https://test.com", UID: UserID},
+			},
+			wantDelState: true,
+			wantErr:      false,
+		},
+		{
+			name: "Multiple entries",
+			batch: []ShortURL{
+				{ID: "1", URL: "https://test.com", UID: UserID},
+				{ID: "2", URL: "https://test.com", UID: UserID},
+			},
+			wantDelState: true,
+			wantErr:      false,
 		},
 	}
 }

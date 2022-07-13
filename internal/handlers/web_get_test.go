@@ -69,7 +69,7 @@ func TestGetFullURL(t *testing.T) {
 				t.Error(err)
 			}
 
-			r := NewShortenerRouter(db, "https://test.url")
+			r := NewShortenerRouter(db, "https://test.url", 10)
 			ts := httptest.NewServer(r)
 			defer ts.Close()
 
