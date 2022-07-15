@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"github.com/go-chi/chi/v5"
+	"go-url-shortener/internal/apperrors"
 	"go-url-shortener/internal/middlewares"
 	"go-url-shortener/internal/storage"
 	"net/http"
@@ -31,8 +32,8 @@ func NewShortenerRouter(db storage.Storager, baseURL string, poolSize int) *chi.
 			})
 		})
 
-		r.NotFound(func(writer http.ResponseWriter, request *http.Request) {
-			http.Error(writer, "This HTTP method is not allowed.", http.StatusMethodNotAllowed)
+		r.NotFound(func(w http.ResponseWriter, r *http.Request) {
+			apperrors.HandleHTTPError(w, apperrors.EmptyError(), http.StatusMethodNotAllowed)
 		})
 	})
 

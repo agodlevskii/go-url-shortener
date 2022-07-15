@@ -39,7 +39,7 @@ func TestGetFullURL(t *testing.T) {
 			id:   "foo",
 			want: want{
 				code:        http.StatusBadRequest,
-				resp:        "no matching URL found",
+				resp:        http.StatusText(http.StatusBadRequest),
 				contentType: "text/plain; charset=utf-8",
 			},
 		},

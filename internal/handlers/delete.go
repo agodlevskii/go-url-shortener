@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	log "github.com/sirupsen/logrus"
+	"go-url-shortener/internal/apperrors"
 	"go-url-shortener/internal/middlewares"
 	"go-url-shortener/internal/storage"
 	"net/http"
@@ -21,15 +22,13 @@ func DeleteShortURLs(db storage.Storager, poolSize int) func(w http.ResponseWrit
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := middlewares.GetUserID(r)
 		if err != nil {
-			log.Error(err)
-			http.Error(w, "couldn't identify the user", http.StatusBadRequest)
+			apperrors.HandleUserError(w)
 			return
 		}
 
 		var ids []string
 		if err = json.NewDecoder(r.Body).Decode(&ids); err != nil || len(ids) == 0 {
-			log.Error(err)
-			http.Error(w, "Please provide a valid list of IDs.", http.StatusBadRequest)
+			apperrors.HandleHTTPError(w, apperrors.NewError(apperrors.IDsListFormat, err), http.StatusBadRequest)
 			return
 		}
 
@@ -52,8 +51,7 @@ func deleteURLs(db storage.Storager, userID string, ids []string) {
 		}
 	}
 
-	err := db.Delete(batch)
-	if err != nil {
+	if err := db.Delete(batch); err != nil {
 		log.Error(err)
 	}
 }

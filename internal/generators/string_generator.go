@@ -2,6 +2,7 @@ package generators
 
 import (
 	"errors"
+	"go-url-shortener/internal/apperrors"
 	"math/rand"
 	"time"
 )
@@ -10,7 +11,7 @@ const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 func GenerateString(size int) (string, error) {
 	if size == 0 {
-		return "", errors.New("missing random string size")
+		return "", errors.New(apperrors.RandomStrLen)
 	}
 
 	r := newRandom()

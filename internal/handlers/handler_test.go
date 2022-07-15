@@ -76,7 +76,7 @@ func TestNewShortenerRouter(t *testing.T) {
 	defer ts.Close()
 
 	resp, _ := testRequest(t, ts, http.MethodPut, "/", "")
-	assert.Error(t, errors.New("This HTTP method is not allowed."))
+	assert.Error(t, errors.New(http.StatusText(http.StatusMethodNotAllowed)))
 	assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
 
 	defer resp.Body.Close()

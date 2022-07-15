@@ -1,7 +1,9 @@
 package storage
 
 import (
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"os"
 	"testing"
 )
 
@@ -31,79 +33,88 @@ func TestNewFileRepo(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewFileRepo(tt.args.filename)
+			r, err := NewFileRepo(tt.args.filename)
 			assert.Equal(t, tt.wantErr, err != nil)
-			assert.Equalf(t, tt.want, got.filename, "NewFileRepo(%v)", tt.args.filename)
-			got.Clear()
+			assert.Equalf(t, tt.want, r.filename, "NewFileRepo(%v)", tt.args.filename)
+			r.Clear()
 		})
 	}
 }
 
 func TestFileRepo_Add(t *testing.T) {
+	t.Parallel()
+
+	fname := "testfile_add"
 	for _, tt := range getAddTestCases() {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			repo, err := NewFileRepo("testfile_add")
+			r, err := NewFileRepo(fname)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			got, err := repo.Add(tt.batch)
+			got, err := r.Add(tt.batch)
 			assert.Equal(t, tt.want.id, got[0].ID)
 			assert.Equal(t, tt.wantErr, err != nil)
-			repo.Clear()
 		})
 	}
+	cleanWorkspace(fname)
 }
 
 func TestFileRepo_Get(t *testing.T) {
+	t.Parallel()
+
+	fname := "testfile_get"
 	for _, tt := range getGetTestCases() {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			repo, err := NewFileRepo("testfile_get")
+			r, err := NewFileRepo(fname)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			_, err = repo.Add([]ShortURL{{ID: "googl", URL: "https://google.com", UID: UserID}})
+			_, err = r.Add([]ShortURL{{ID: "googl", URL: "https://google.com", UID: UserID}})
 			if err != nil {
 				t.Fatal(err)
 			}
-			sURL, err := repo.Get(tt.id)
+
+			sURL, err := r.Get(tt.id)
 			assert.Equal(t, tt.wantErr, err != nil)
 			assert.Equal(t, tt.want, sURL.URL)
-			repo.Clear()
 		})
 	}
+	cleanWorkspace(fname)
 }
 
 func TestFileRepo_Has(t *testing.T) {
+	t.Parallel()
+
+	fname := "testfile_has"
 	for _, tt := range getHasTestCases() {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			repo, err := NewFileRepo("testfile_has")
+			r, err := NewFileRepo(fname)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			_, err = repo.Add([]ShortURL{{ID: "googl", URL: "https://google.com", UID: UserID}})
+			_, err = r.Add([]ShortURL{{ID: "googl", URL: "https://google.com", UID: UserID}})
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			has, err := repo.Has(tt.id)
+			has, err := r.Has(tt.id)
 			assert.Equal(t, tt.want, has)
 			assert.Equal(t, tt.wantErr, err != nil)
-			repo.Clear()
 		})
 	}
+	cleanWorkspace(fname)
 }
 
 func TestFileRepo_Delete(t *testing.T) {
+	t.Parallel()
+
+	fname := "testfile_delete"
 	for _, tt := range getDeleteTestCases() {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			r, err := NewFileRepo("testfile_has")
+			r, err := NewFileRepo(fname)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -119,11 +130,19 @@ func TestFileRepo_Delete(t *testing.T) {
 			for _, sURL := range tt.batch {
 				stored, err := r.Get(sURL.ID)
 				if err != nil {
+					r.Clear()
 					t.Fatal(err)
 				}
 
 				assert.Equal(t, tt.wantDelState, stored.Deleted)
 			}
 		})
+	}
+	cleanWorkspace(fname)
+}
+
+func cleanWorkspace(fname string) {
+	if err := os.Remove(fname); err != nil {
+		log.Error(err)
 	}
 }

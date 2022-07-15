@@ -3,11 +3,10 @@ package storage
 import (
 	"bufio"
 	"errors"
-	"fmt"
+	"github.com/kr/pretty"
 	log "github.com/sirupsen/logrus"
+	"go-url-shortener/internal/apperrors"
 	"os"
-	"strconv"
-	"strings"
 )
 
 type FileRepo struct {
@@ -16,19 +15,15 @@ type FileRepo struct {
 
 func NewFileRepo(filename string) (FileRepo, error) {
 	if filename == "" {
-		return FileRepo{}, errors.New("the filename is missing")
+		return FileRepo{}, errors.New(apperrors.FilenameMissing)
 	}
 
-	file, err := os.OpenFile(filename, os.O_RDONLY|os.O_CREATE, 0777)
+	file, err := os.OpenFile(filename, os.O_CREATE|os.O_TRUNC, 0777)
 	if err != nil {
 		return FileRepo{}, err
 	}
 
-	if err = file.Close(); err != nil {
-		return FileRepo{}, err
-	}
-
-	return FileRepo{filename: filename}, nil
+	return FileRepo{filename: filename}, file.Close()
 }
 
 func (f FileRepo) Add(batch []ShortURL) ([]ShortURL, error) {
@@ -36,11 +31,11 @@ func (f FileRepo) Add(batch []ShortURL) ([]ShortURL, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer file.Close()
 
 	w := bufio.NewWriter(file)
 	for _, sURL := range batch {
-		_, err = w.WriteString(sURL.ID + " : " + sURL.URL + " : " + sURL.UID + " : " + strconv.FormatBool(sURL.Deleted) + "\n")
-		if err != nil {
+		if _, err = w.WriteString(ShortURLToRepoString(sURL)); err != nil {
 			return nil, err
 		}
 	}
@@ -63,21 +58,8 @@ func (f FileRepo) Get(id string) (ShortURL, error) {
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		text := scanner.Text()
-		data := strings.Split(text, " : ")
-		fmt.Println(text)
-
-		if !isEntryValid(data) {
-			return ShortURL{}, errors.New("malformed file: " + file.Name())
-		}
-
-		if data[0] == id {
-			return ShortURL{
-				ID:      data[0],
-				URL:     data[1],
-				UID:     data[2],
-				Deleted: data[3] == "true",
-			}, nil
+		if sURL, err := RepoStringToShortURL(scanner.Text()); err != nil || sURL.ID == id {
+			return sURL, err
 		}
 	}
 
@@ -85,43 +67,30 @@ func (f FileRepo) Get(id string) (ShortURL, error) {
 		return ShortURL{}, scanner.Err()
 	}
 
-	return ShortURL{}, errors.New("no matching URL found: " + id)
+	return ShortURL{}, errors.New(pretty.Sprintf("%s: %s", apperrors.URLNotFound, id))
 }
 
 func (f FileRepo) GetAll(userID string) ([]ShortURL, error) {
 	file, err := os.OpenFile(f.filename, os.O_RDONLY|os.O_CREATE, 0777)
 	if err != nil {
-		log.Error(err)
-		return nil, nil
+		return nil, err
 	}
 	defer file.Close()
 
 	urls := make([]ShortURL, 0)
 	scanner := bufio.NewScanner(file)
-	counter := 0
-
-	for ; scanner.Scan(); counter++ {
-		data := strings.Split(scanner.Text(), " : ")
-
-		if !isEntryValid(data) {
-			return nil, errors.New("malformed file: " + file.Name())
+	for scanner.Scan() {
+		sURL, err := RepoStringToShortURL(scanner.Text())
+		if err != nil {
+			return nil, err
 		}
 
-		if data[2] == userID {
-			urls = append(urls, ShortURL{
-				ID:      data[0],
-				URL:     data[1],
-				UID:     userID,
-				Deleted: data[3] == "true",
-			})
+		if sURL.UID == userID {
+			urls = append(urls, sURL)
 		}
 	}
 
-	if counter == 0 {
-		return urls, scanner.Err()
-	}
-
-	return urls, nil
+	return urls, scanner.Err()
 }
 
 func (f FileRepo) Has(id string) (bool, error) {
@@ -141,16 +110,13 @@ func (f FileRepo) Has(id string) (bool, error) {
 	}
 
 	scanner := bufio.NewScanner(file)
-	counter := 0
-
-	for ; scanner.Scan(); counter++ {
-		data := strings.Split(scanner.Text(), " : ")
-		if !isEntryValid(data) {
-			log.Error(data)
-			return false, nil
+	for scanner.Scan() {
+		sURL, err := RepoStringToShortURL(scanner.Text())
+		if err != nil {
+			return false, err
 		}
 
-		if data[0] == id {
+		if sURL.ID == id {
 			return true, nil
 		}
 	}
@@ -177,6 +143,7 @@ func (f FileRepo) Delete(batch []ShortURL) error {
 		}
 		return err
 	}
+	defer file.Close()
 
 	IDtoSURL := make(map[string]ShortURL, len(batch))
 	for _, v := range batch {
@@ -186,35 +153,21 @@ func (f FileRepo) Delete(batch []ShortURL) error {
 	restore := make([]ShortURL, 0)
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		data := strings.Split(scanner.Text(), " : ")
-
-		if !isEntryValid(data) {
-			return errors.New("malformed file: " + file.Name())
+		stored, err := RepoStringToShortURL(scanner.Text())
+		if err != nil {
+			return err
 		}
 
-		if sURL := IDtoSURL[data[0]]; sURL.UID != "" {
-			restore = append(restore, ShortURL{
-				ID:      data[0],
-				URL:     data[1],
-				UID:     data[2],
-				Deleted: sURL.UID == data[2],
-			})
-		}
+		stored.Deleted = IDtoSURL[stored.ID].UID != ""
+		restore = append(restore, stored)
 	}
 
 	if scanner.Err() != nil {
 		return scanner.Err()
 	}
-
-	file.Close()
 	f.Clear()
 	if _, err = f.Add(restore); err != nil {
 		return err
 	}
-
 	return nil
-}
-
-func isEntryValid(entry []string) bool {
-	return len(entry) == 4
 }

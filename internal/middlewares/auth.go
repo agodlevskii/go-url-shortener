@@ -5,8 +5,8 @@ import (
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"go-url-shortener/configs"
+	"go-url-shortener/internal/apperrors"
 	"go-url-shortener/internal/encryptors"
-	"io"
 	"net/http"
 	"regexp"
 )
@@ -18,7 +18,7 @@ func Authorize(next http.Handler) http.Handler {
 		if err == nil {
 			valid, err := validateID(cookie.Value)
 			if err != nil {
-				io.WriteString(w, err.Error())
+				apperrors.HandleHTTPError(w, apperrors.NewError("", err), http.StatusInternalServerError)
 				return
 			}
 
@@ -30,7 +30,7 @@ func Authorize(next http.Handler) http.Handler {
 
 		newID, err := generateID()
 		if err != nil {
-			io.WriteString(w, err.Error())
+			apperrors.HandleHTTPError(w, apperrors.NewError("", err), http.StatusInternalServerError)
 			return
 		}
 
@@ -63,7 +63,7 @@ func validateID(id string) (bool, error) {
 	data, err := encryptors.AESDecrypt(id)
 	if err != nil {
 		log.Error(err)
-		return false, nil
+		return false, err
 	}
 	return regexp.Match(`\w{8}-\w{4}-\w{2}`, data)
 }

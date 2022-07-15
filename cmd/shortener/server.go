@@ -20,10 +20,7 @@ func main() {
 	}
 
 	r := handlers.NewShortenerRouter(repo, cfg.BaseURL, 10)
-	err = http.ListenAndServe(cfg.Addr, r)
-	if err != nil {
-		log.Fatal(err)
-	}
+	log.Fatal(http.ListenAndServe(cfg.Addr, r))
 }
 
 func getRepo(cfg *config.Config) (storage.Storager, error) {

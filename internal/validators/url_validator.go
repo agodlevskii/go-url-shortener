@@ -6,10 +6,10 @@ import (
 )
 
 func IsURLStringValid(rawURL string) bool {
-	_, err := url.ParseRequestURI(rawURL)
-	if err != nil {
+	if _, err := url.ParseRequestURI(rawURL); err != nil {
 		log.Error(err)
+		return false
 	}
 
-	return err == nil
+	return true
 }
