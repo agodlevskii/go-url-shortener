@@ -56,7 +56,7 @@ func Batch(db storage.Storager, baseURL string) func(w http.ResponseWriter, r *h
 }
 
 func getBatch(db storage.Storager, req []BatchReqData, userID string) ([]storage.ShortURL, error) {
-	var batch = make([]storage.ShortURL, len(req))
+	var batch = make([]storage.ShortURL, 0, len(req))
 	for i, data := range req {
 		id, err := generators.GenerateID(db, 7)
 		if err != nil {
@@ -74,7 +74,7 @@ func getBatch(db storage.Storager, req []BatchReqData, userID string) ([]storage
 }
 
 func getResponseData(req []BatchReqData, res []storage.ShortURL, baseURL string) []BatchResData {
-	resData := make([]BatchResData, len(req))
+	resData := make([]BatchResData, 0, len(req))
 	urlToCorID := getURLToCorIDMap(req)
 
 	for i, sURL := range res {

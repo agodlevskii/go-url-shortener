@@ -43,7 +43,7 @@ func DeleteShortURLs(db storage.Storager, poolSize int) func(w http.ResponseWrit
 }
 
 func deleteURLs(db storage.Storager, userID string, ids []string) {
-	batch := make([]storage.ShortURL, len(ids))
+	batch := make([]storage.ShortURL, 0, len(ids))
 	for i, v := range ids {
 		batch[i] = storage.ShortURL{
 			ID:  v,

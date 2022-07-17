@@ -37,7 +37,7 @@ func (repo DBRepo) Add(batch []ShortURL) ([]ShortURL, error) {
 	}
 	defer stmt.Close()
 
-	res := make([]ShortURL, len(batch))
+	res := make([]ShortURL, 0, len(batch))
 	for i, sURL := range batch {
 		var newID string
 
@@ -125,7 +125,7 @@ func (repo DBRepo) Delete(batch []ShortURL) error {
 	}
 
 	userID := batch[0].UID
-	ids := make([]string, len(batch))
+	ids := make([]string, 0, len(batch))
 	for i, sURL := range batch {
 		ids[i] = sURL.ID
 	}
