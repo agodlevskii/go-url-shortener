@@ -3,8 +3,8 @@ package storage
 import (
 	"database/sql"
 	"errors"
-	"github.com/jackc/pgx/v4"
 	_ "github.com/jackc/pgx/v4/stdlib"
+	"github.com/lib/pq"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -43,7 +43,7 @@ func (repo DBRepo) Add(batch []ShortURL) ([]ShortURL, error) {
 
 		err = stmt.QueryRow(sURL.ID, sURL.URL, sURL.UID, sURL.Deleted).Scan(&newID)
 		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) || err.Error() == "sql: no rows in result set" {
+			if errors.Is(err, sql.ErrNoRows) {
 				err = repo.db.QueryRow("SELECT id FROM urls WHERE url = $1", sURL.URL).Scan(&newID)
 			}
 
@@ -130,6 +130,6 @@ func (repo DBRepo) Delete(batch []ShortURL) error {
 		ids[i] = sURL.ID
 	}
 
-	_, err := repo.db.Exec("UPDATE urls SET deleted = true WHERE uid = $1 AND id = any($2)", userID, ids)
+	_, err := repo.db.Exec("UPDATE urls SET deleted = true WHERE uid = $1 AND id = any($2)", userID, pq.Array(ids))
 	return err
 }

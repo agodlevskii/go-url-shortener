@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"github.com/stretchr/testify/assert"
+	"go-url-shortener/internal/apperrors"
 	"go-url-shortener/internal/storage"
 	"net/http"
 	"net/http/httptest"
@@ -36,7 +37,7 @@ func TestWebPostHandler(t *testing.T) {
 			name: "Missing body",
 			want: want{
 				code:        http.StatusBadRequest,
-				resp:        "The original URL is missing. Please attach it to the request body.",
+				resp:        apperrors.URLFormat,
 				contentType: "text/plain; charset=utf-8",
 			},
 		},
@@ -44,7 +45,7 @@ func TestWebPostHandler(t *testing.T) {
 			name: "Empty body",
 			want: want{
 				code:        http.StatusBadRequest,
-				resp:        "The original URL is missing. Please attach it to the request body.",
+				resp:        apperrors.URLFormat,
 				contentType: "text/plain; charset=utf-8",
 			},
 		},
@@ -108,7 +109,7 @@ func TestAPIPostHandler(t *testing.T) {
 			name: "Missing body",
 			want: want{
 				code:        http.StatusBadRequest,
-				resp:        "You provided an incorrect URL request.",
+				resp:        apperrors.URLFormat,
 				contentType: "text/plain; charset=utf-8",
 			},
 		},
@@ -116,7 +117,7 @@ func TestAPIPostHandler(t *testing.T) {
 			name: "Empty body",
 			want: want{
 				code:        http.StatusBadRequest,
-				resp:        "You provided an incorrect URL request.",
+				resp:        apperrors.URLFormat,
 				contentType: "text/plain; charset=utf-8",
 			},
 		},

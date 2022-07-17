@@ -1,5 +1,12 @@
 package storage
 
+import (
+	"errors"
+	"go-url-shortener/internal/apperrors"
+	"strconv"
+	"strings"
+)
+
 type ShortURL struct {
 	ID      string
 	URL     string
@@ -15,4 +22,28 @@ type Storager interface {
 	GetAll(userID string) ([]ShortURL, error)
 	Has(id string) (bool, error)
 	Ping() bool
+}
+
+const RepoStrSep = " : "
+
+func ShortURLToRepoString(sURL ShortURL) string {
+	return sURL.ID + RepoStrSep + sURL.URL + RepoStrSep + sURL.UID + RepoStrSep + strconv.FormatBool(sURL.Deleted) + "\n"
+}
+
+func RepoStringToShortURL(str string) (ShortURL, error) {
+	entry := strings.Split(str, RepoStrSep)
+	if !isEntryValid(entry) {
+		return ShortURL{}, errors.New(apperrors.RepoEntryInvalid)
+	}
+
+	return ShortURL{
+		ID:      entry[0],
+		URL:     entry[1],
+		UID:     entry[2],
+		Deleted: entry[3] == "true",
+	}, nil
+}
+
+func isEntryValid(entry []string) bool {
+	return len(entry) == 4
 }

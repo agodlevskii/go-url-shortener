@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	log "github.com/sirupsen/logrus"
+	"go-url-shortener/internal/apperrors"
 	"go-url-shortener/internal/middlewares"
 	"go-url-shortener/internal/storage"
 	"net/http"
@@ -12,8 +13,7 @@ func UserURLsHandler(db storage.Storager, baseURL string) func(http.ResponseWrit
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := middlewares.GetUserID(r)
 		if err != nil {
-			log.Error(err)
-			http.Error(w, "couldn't identify the user", http.StatusInternalServerError)
+			apperrors.HandleUserError(w)
 			return
 		}
 
@@ -27,12 +27,8 @@ func UserURLsHandler(db storage.Storager, baseURL string) func(http.ResponseWrit
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-
-		err = json.NewEncoder(w).Encode(list)
-		if err != nil {
-			log.Error(err)
-			http.Error(w, "please try again later", http.StatusInternalServerError)
-			return
+		if err = json.NewEncoder(w).Encode(list); err != nil {
+			apperrors.HandleInternalError(w)
 		}
 	}
 }

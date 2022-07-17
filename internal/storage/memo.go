@@ -2,6 +2,7 @@ package storage
 
 import (
 	"errors"
+	"go-url-shortener/internal/apperrors"
 	"sync"
 )
 
@@ -36,7 +37,7 @@ func (m *MemoRepo) Get(id string) (ShortURL, error) {
 		return sURL.(ShortURL), nil
 	}
 
-	return ShortURL{}, errors.New("no matching URL found")
+	return ShortURL{}, errors.New(apperrors.URLNotFound)
 }
 
 func (m *MemoRepo) GetAll(userID string) ([]ShortURL, error) {

@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"compress/gzip"
+	"go-url-shortener/internal/apperrors"
 	"go-url-shortener/internal/respwriters"
 	"net/http"
 	"strconv"
@@ -24,7 +25,7 @@ func Compress(next http.Handler) http.Handler {
 
 		gz, err := gzip.NewWriterLevel(w, gzip.BestCompression)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			apperrors.HandleHTTPError(w, apperrors.NewError("", err), http.StatusInternalServerError)
 			return
 		}
 		defer gz.Close()
@@ -48,7 +49,7 @@ func Decompress(next http.Handler) http.Handler {
 
 		gz, err := gzip.NewReader(r.Body)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			apperrors.HandleHTTPError(w, apperrors.NewError("", err), http.StatusInternalServerError)
 			return
 		}
 		defer gz.Close()

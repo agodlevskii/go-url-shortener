@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
-	log "github.com/sirupsen/logrus"
+	"go-url-shortener/internal/apperrors"
 	"go-url-shortener/internal/generators"
 	"go-url-shortener/internal/middlewares"
 	"go-url-shortener/internal/storage"
@@ -23,26 +23,25 @@ func Batch(db storage.Storager, baseURL string) func(w http.ResponseWriter, r *h
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := middlewares.GetUserID(r)
 		if err != nil {
-			log.Error(err)
-			http.Error(w, "couldn't identify the user", http.StatusInternalServerError)
+			apperrors.HandleUserError(w)
 			return
 		}
 
 		var req []BatchReqData
 		if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
-			fireIncorrectRequest(w, err)
+			apperrors.HandleHTTPError(w, apperrors.NewError(apperrors.BatchFormat, err), http.StatusBadRequest)
 			return
 		}
 
 		batch, err := getBatch(db, req, userID)
 		if err != nil {
-			fireInternalError(w, err)
+			apperrors.HandleInternalError(w)
 			return
 		}
 
 		res, err := db.Add(batch)
 		if err != nil {
-			fireInternalError(w, err)
+			apperrors.HandleInternalError(w)
 			return
 		}
 
@@ -51,7 +50,7 @@ func Batch(db storage.Storager, baseURL string) func(w http.ResponseWriter, r *h
 		w.WriteHeader(201)
 		err = json.NewEncoder(w).Encode(resData)
 		if err != nil {
-			fireInternalError(w, err)
+			apperrors.HandleInternalError(w)
 		}
 	}
 }
@@ -94,14 +93,4 @@ func getURLToCorIDMap(req []BatchReqData) map[string]string {
 		res[data.OriginalURL] = data.CorrelationID
 	}
 	return res
-}
-
-func fireIncorrectRequest(w http.ResponseWriter, err error) {
-	http.Error(w, "You provided an incorrect batch request.", http.StatusBadRequest)
-	log.Error(err)
-}
-
-func fireInternalError(w http.ResponseWriter, err error) {
-	http.Error(w, "Couldn't save the passed data.", http.StatusInternalServerError)
-	log.Error(err)
 }
