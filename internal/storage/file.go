@@ -125,7 +125,7 @@ func (f FileRepo) Has(id string) (bool, error) {
 }
 
 func (f FileRepo) Clear() {
-	if err := os.Remove(f.filename); err != nil {
+	if err := os.Remove(f.filename); err != nil && !errors.Is(err, os.ErrNotExist) {
 		log.Error(err)
 	}
 }
