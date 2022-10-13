@@ -9,18 +9,14 @@ import (
 )
 
 func main() {
-	cfg, err := config.NewConfig()
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	cfg := config.GetConfig()
 	repo, err := getRepo(cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	r := handlers.NewShortenerRouter(repo, cfg.BaseURL, 10)
-	log.Fatal(http.ListenAndServe(cfg.Addr, r))
+	r := handlers.NewShortenerRouter(repo)
+	http.ListenAndServe(cfg.Addr, r)
 }
 
 func getRepo(cfg *config.Config) (storage.Storager, error) {

@@ -60,7 +60,9 @@ func APIPostHandler(db storage.Storager, baseURL string) func(w http.ResponseWri
 			w.WriteHeader(http.StatusCreated)
 		}
 
-		log.Error(json.NewEncoder(w).Encode(res))
+		if err = json.NewEncoder(w).Encode(res); err != nil {
+			log.Error(err)
+		}
 	}
 }
 
@@ -97,8 +99,7 @@ func WebPostHandler(db storage.Storager, baseURL string) func(w http.ResponseWri
 			w.WriteHeader(http.StatusCreated)
 		}
 		w.WriteHeader(http.StatusCreated)
-		_, err = w.Write([]byte(res))
-		if err != nil {
+		if _, err = w.Write([]byte(res)); err != nil {
 			log.Error(err)
 		}
 	}

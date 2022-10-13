@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/lib/pq"
-	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"regexp"
 	"testing"
@@ -74,7 +73,6 @@ func TestDBRepo_Delete(t *testing.T) {
 			}
 
 			err := r.Delete(tt.state)
-			log.Error(err)
 			assert.Equal(t, tt.wantErr, err != nil)
 		})
 	}

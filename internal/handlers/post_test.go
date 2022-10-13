@@ -6,6 +6,7 @@ import (
 	"go-url-shortener/internal/storage"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 )
 
@@ -29,7 +30,7 @@ func TestWebPostHandler(t *testing.T) {
 		baseURL string
 	}{
 		repo:    storage.NewMemoryRepo(),
-		baseURL: "https://test.url",
+		baseURL: "http://localhost:8080",
 	}
 
 	tests := []testCase{
@@ -61,7 +62,11 @@ func TestWebPostHandler(t *testing.T) {
 		},
 	}
 
-	r := NewShortenerRouter(args.repo, args.baseURL, 10)
+	if err := os.Chdir("../../"); err != nil {
+		t.Error(err)
+	}
+
+	r := NewShortenerRouter(args.repo)
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
@@ -96,7 +101,7 @@ func TestAPIPostHandler(t *testing.T) {
 		baseURL string
 	}{
 		repo:    storage.NewMemoryRepo(),
-		baseURL: "https://test.url",
+		baseURL: "http://localhost:8080",
 	}
 
 	tests := []struct {
@@ -133,7 +138,11 @@ func TestAPIPostHandler(t *testing.T) {
 		},
 	}
 
-	r := NewShortenerRouter(args.repo, args.baseURL, 10)
+	if err := os.Chdir("../../"); err != nil {
+		t.Error(err)
+	}
+
+	r := NewShortenerRouter(args.repo)
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 

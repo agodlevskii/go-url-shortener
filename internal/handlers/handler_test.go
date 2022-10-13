@@ -12,6 +12,7 @@ import (
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 )
@@ -53,8 +54,7 @@ func testRequest(t *testing.T, ts *httptest.Server, method, path, data string) (
 	require.NoError(t, err)
 
 	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
+		if err := Body.Close(); err != nil {
 			t.Error(err)
 		}
 	}(resp.Body)
@@ -71,7 +71,11 @@ func testPostRequest(t *testing.T, ts *httptest.Server, path, data string) (*htt
 }
 
 func TestNewShortenerRouter(t *testing.T) {
-	r := NewShortenerRouter(storage.NewMemoryRepo(), "https://test.url", 10)
+	if err := os.Chdir("../../"); err != nil {
+		t.Error(err)
+	}
+
+	r := NewShortenerRouter(storage.NewMemoryRepo())
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 

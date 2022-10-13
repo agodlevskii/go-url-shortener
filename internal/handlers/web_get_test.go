@@ -56,20 +56,18 @@ func TestGetFullURL(t *testing.T) {
 		},
 	}
 
-	err := os.Chdir("../../")
-	if err != nil {
+	if err := os.Chdir("../../"); err != nil {
 		t.Error(err)
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			db := storage.NewMemoryRepo()
-			_, err = db.Add(tt.storage)
-			if err != nil {
+			if _, err := db.Add(tt.storage); err != nil {
 				t.Error(err)
 			}
 
-			r := NewShortenerRouter(db, "https://test.url", 10)
+			r := NewShortenerRouter(db)
 			ts := httptest.NewServer(r)
 			defer ts.Close()
 
