@@ -1,12 +1,13 @@
 package middlewares
 
 import (
-	"github.com/stretchr/testify/assert"
 	"go-url-shortener/configs"
 	"go-url-shortener/internal/encryptors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -69,6 +70,7 @@ func TestGetUserID(t *testing.T) {
 			if err != nil {
 				return
 			}
+			defer do.Body.Close()
 
 			got, err := GetUserID(do.Request)
 			assert.Equal(t, tt.want, got)

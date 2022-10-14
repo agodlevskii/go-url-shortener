@@ -1,42 +1,43 @@
 package handlers
 
 import (
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"go-url-shortener/internal/storage"
 	"net/http"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
-type mockDb struct {
+type mockDB struct {
 	mock.Mock
 }
 
-func (m *mockDb) Ping() bool {
+func (m *mockDB) Ping() bool {
 	args := m.Called()
 	return args.Bool(0)
 }
 
-func (m *mockDb) Add([]storage.ShortURL) ([]storage.ShortURL, error) {
+func (m *mockDB) Add([]storage.ShortURL) ([]storage.ShortURL, error) {
 	return nil, nil
 }
 
-func (m *mockDb) Clear() {}
+func (m *mockDB) Clear() {}
 
-func (m *mockDb) Get(string) (storage.ShortURL, error) {
+func (m *mockDB) Get(string) (storage.ShortURL, error) {
 	return storage.ShortURL{}, nil
 }
 
-func (m *mockDb) GetAll(string) ([]storage.ShortURL, error) {
+func (m *mockDB) GetAll(string) ([]storage.ShortURL, error) {
 	return nil, nil
 }
 
-func (m *mockDb) Has(id string) (bool, error) {
+func (m *mockDB) Has(id string) (bool, error) {
 	return true, nil
 }
 
-func (m *mockDb) Delete(batch []storage.ShortURL) error {
+func (m *mockDB) Delete(batch []storage.ShortURL) error {
 	return nil
 }
 
@@ -71,7 +72,7 @@ func TestPing(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := new(mockDb)
+			db := new(mockDB)
 			db.On("Ping").Return(tt.resp)
 
 			ts := getTestServer(db)

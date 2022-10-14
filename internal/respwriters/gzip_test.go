@@ -3,8 +3,9 @@ package respwriters
 import (
 	"bytes"
 	"compress/gzip"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGzipWriter_Write(t *testing.T) {

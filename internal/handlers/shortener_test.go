@@ -72,14 +72,6 @@ func TestWebShortener(t *testing.T) {
 }
 
 func TestAPIShortener(t *testing.T) {
-	tsa := struct {
-		repo    storage.Storager
-		baseURL string
-	}{
-		repo:    storage.NewMemoryRepo(),
-		baseURL: "http://localhost:8080",
-	}
-
 	tests := []struct {
 		name         string
 		want         httpRes
@@ -108,7 +100,7 @@ func TestAPIShortener(t *testing.T) {
 			checkInclude: true,
 			want: httpRes{
 				code:        http.StatusCreated,
-				resp:        `{"result":` + `"` + tsa.baseURL,
+				resp:        `{"result":` + `"` + BaseURL,
 				contentType: "application/json",
 			},
 		},

@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
-	"github.com/go-chi/chi/v5"
 	"go-url-shortener/internal/apperrors"
 	"go-url-shortener/internal/generators"
 	"go-url-shortener/internal/middlewares"
@@ -11,6 +10,8 @@ import (
 	"go-url-shortener/internal/validators"
 	"io"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
 
 	log "github.com/sirupsen/logrus"
 )

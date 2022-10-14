@@ -3,7 +3,6 @@ package handlers
 import (
 	"bytes"
 	"errors"
-	"github.com/stretchr/testify/assert"
 	"go-url-shortener/configs"
 	"go-url-shortener/internal/storage"
 	"io"
@@ -14,6 +13,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/stretchr/testify/require"
 )

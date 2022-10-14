@@ -1,11 +1,12 @@
 package handlers
 
 import (
-	"github.com/stretchr/testify/assert"
 	"go-url-shortener/internal/storage"
 	"net/http"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 const route = "/api/user/urls"
