@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"errors"
+	"github.com/stretchr/testify/assert"
 	"go-url-shortener/configs"
 	"go-url-shortener/internal/storage"
 	"io"
@@ -14,12 +15,36 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-var UserIDEnc = "4b529d6712a1d59f62a87dc4fa54f332"
-var UserID = "7190e4d4-fd9c-4b"
+type httpRes struct {
+	code        int
+	resp        string
+	contentType string
+	location    string
+}
+
+const (
+	BaseURL   = "http://localhost:8080"
+	UserIDEnc = "4b529d6712a1d59f62a87dc4fa54f332"
+	UserID    = "7190e4d4-fd9c-4b"
+)
+
+func TestNewShortenerRouter(t *testing.T) {
+	if err := os.Chdir("../../"); err != nil {
+		t.Fatal(err)
+	}
+
+	ts := getTestServer(nil)
+	defer ts.Close()
+
+	resp, _ := testRequest(t, ts, http.MethodPut, "/", "")
+	assert.Error(t, errors.New(http.StatusText(http.StatusMethodNotAllowed)))
+	assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
+
+	defer resp.Body.Close()
+}
 
 func testRequest(t *testing.T, ts *httptest.Server, method, path, data string) (*http.Response, string) {
 	rawURL := ts.URL + path
@@ -63,26 +88,10 @@ func testRequest(t *testing.T, ts *httptest.Server, method, path, data string) (
 	return resp, strings.TrimSpace(string(respBody))
 }
 
-func testGetRequest(t *testing.T, ts *httptest.Server, path string) (*http.Response, string) {
-	return testRequest(t, ts, http.MethodGet, path, "")
-}
-
-func testPostRequest(t *testing.T, ts *httptest.Server, path, data string) (*http.Response, string) {
-	return testRequest(t, ts, http.MethodPost, path, data)
-}
-
-func TestNewShortenerRouter(t *testing.T) {
-	if err := os.Chdir("../../"); err != nil {
-		t.Fatal(err)
+func getTestServer(repo storage.Storager) *httptest.Server {
+	if repo == nil {
+		repo = storage.NewMemoryRepo()
 	}
-
-	r := NewShortenerRouter(storage.NewMemoryRepo())
-	ts := httptest.NewServer(r)
-	defer ts.Close()
-
-	resp, _ := testRequest(t, ts, http.MethodPut, "/", "")
-	assert.Error(t, errors.New(http.StatusText(http.StatusMethodNotAllowed)))
-	assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
-
-	defer resp.Body.Close()
+	r := NewShortenerRouter(repo)
+	return httptest.NewServer(r)
 }

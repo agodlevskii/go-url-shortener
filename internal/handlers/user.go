@@ -10,7 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func UserURLsHandler(db storage.Storager, baseURL string) func(http.ResponseWriter, *http.Request) {
+func GetUserLinks(db storage.Storager, baseURL string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := middlewares.GetUserID(r)
 		if err != nil {
@@ -18,9 +18,9 @@ func UserURLsHandler(db storage.Storager, baseURL string) func(http.ResponseWrit
 			return
 		}
 
-		list := getUserLinks(db, userID, baseURL)
+		list := getLinks(db, userID, baseURL)
 		if len(list) == 0 {
-			w.Header().Set("Content-Type", "text/plain")
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			w.WriteHeader(http.StatusNoContent)
 			w.Write([]byte("No results found."))
 			return
@@ -34,7 +34,40 @@ func UserURLsHandler(db storage.Storager, baseURL string) func(http.ResponseWrit
 	}
 }
 
-func getUserLinks(db storage.Storager, userID, baseURL string) []UserLink {
+func DeleteUserLinks(db storage.Storager, poolSize int) func(w http.ResponseWriter, r *http.Request) {
+	pool := make(chan func(), poolSize)
+	for i := 0; i < poolSize; i++ {
+		go func() {
+			for f := range pool {
+				f()
+			}
+		}()
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, err := middlewares.GetUserID(r)
+		if err != nil {
+			apperrors.HandleUserError(w)
+			return
+		}
+
+		var ids []string
+		if err = json.NewDecoder(r.Body).Decode(&ids); err != nil || len(ids) == 0 {
+			apperrors.HandleHTTPError(w, apperrors.NewError(apperrors.IDsListFormat, err), http.StatusBadRequest)
+			return
+		}
+
+		go func() {
+			pool <- func() {
+				deleteLinks(db, userID, ids)
+			}
+		}()
+
+		w.WriteHeader(http.StatusAccepted)
+	}
+}
+
+func getLinks(db storage.Storager, userID, baseURL string) []UserLink {
 	urls, err := db.GetAll(userID)
 	if err != nil {
 		log.Error(err)
@@ -54,4 +87,18 @@ func getUserLinks(db storage.Storager, userID, baseURL string) []UserLink {
 	}
 
 	return links
+}
+
+func deleteLinks(db storage.Storager, userID string, ids []string) {
+	batch := make([]storage.ShortURL, len(ids))
+	for i, v := range ids {
+		batch[i] = storage.ShortURL{
+			ID:  v,
+			UID: userID,
+		}
+	}
+
+	if err := db.Delete(batch); err != nil {
+		log.Error(err)
+	}
 }

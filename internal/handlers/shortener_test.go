@@ -4,40 +4,24 @@ import (
 	"go-url-shortener/internal/apperrors"
 	"go-url-shortener/internal/storage"
 	"net/http"
-	"net/http/httptest"
 	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestWebPostHandler(t *testing.T) {
-	type (
-		want struct {
-			code        int
-			resp        string
-			contentType string
-		}
-		testCase struct {
-			name         string
-			data         string
-			checkInclude bool
-			want         want
-		}
-	)
-
-	args := struct {
-		repo    *storage.MemoRepo
-		baseURL string
-	}{
-		repo:    storage.NewMemoryRepo(),
-		baseURL: "http://localhost:8080",
+func TestWebShortener(t *testing.T) {
+	type testCase struct {
+		name         string
+		data         string
+		checkInclude bool
+		want         httpRes
 	}
 
 	tests := []testCase{
 		{
 			name: "Missing body",
-			want: want{
+			want: httpRes{
 				code:        http.StatusBadRequest,
 				resp:        apperrors.URLFormat,
 				contentType: "text/plain; charset=utf-8",
@@ -45,7 +29,7 @@ func TestWebPostHandler(t *testing.T) {
 		},
 		{
 			name: "Empty body",
-			want: want{
+			want: httpRes{
 				code:        http.StatusBadRequest,
 				resp:        apperrors.URLFormat,
 				contentType: "text/plain; charset=utf-8",
@@ -55,9 +39,9 @@ func TestWebPostHandler(t *testing.T) {
 			name:         "Correct body",
 			data:         "https://google.com",
 			checkInclude: true,
-			want: want{
+			want: httpRes{
 				code:        http.StatusCreated,
-				resp:        args.baseURL,
+				resp:        BaseURL,
 				contentType: "text/plain; charset=utf-8",
 			},
 		},
@@ -67,13 +51,12 @@ func TestWebPostHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	r := NewShortenerRouter(args.repo)
-	ts := httptest.NewServer(r)
+	ts := getTestServer(nil)
 	defer ts.Close()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resp, body := testPostRequest(t, ts, "/", tt.data)
+			resp, body := testRequest(t, ts, http.MethodPost, "/", tt.data)
 			assert.Equal(t, tt.want.code, resp.StatusCode)
 			assert.Equal(t, tt.want.contentType, resp.Header.Get("Content-Type"))
 
@@ -88,16 +71,8 @@ func TestWebPostHandler(t *testing.T) {
 	}
 }
 
-func TestAPIPostHandler(t *testing.T) {
-	type (
-		want struct {
-			code        int
-			resp        string
-			contentType string
-		}
-	)
-
-	args := struct {
+func TestAPIShortener(t *testing.T) {
+	tsa := struct {
 		repo    storage.Storager
 		baseURL string
 	}{
@@ -107,13 +82,13 @@ func TestAPIPostHandler(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		want         want
+		want         httpRes
 		data         string
 		checkInclude bool
 	}{
 		{
 			name: "Missing body",
-			want: want{
+			want: httpRes{
 				code:        http.StatusBadRequest,
 				resp:        apperrors.URLFormat,
 				contentType: "text/plain; charset=utf-8",
@@ -121,7 +96,7 @@ func TestAPIPostHandler(t *testing.T) {
 		},
 		{
 			name: "Empty body",
-			want: want{
+			want: httpRes{
 				code:        http.StatusBadRequest,
 				resp:        apperrors.URLFormat,
 				contentType: "text/plain; charset=utf-8",
@@ -131,9 +106,9 @@ func TestAPIPostHandler(t *testing.T) {
 			name:         "Correct body",
 			data:         `{ "url": "https://google.com" }`,
 			checkInclude: true,
-			want: want{
+			want: httpRes{
 				code:        http.StatusCreated,
-				resp:        `{"result":` + `"` + args.baseURL,
+				resp:        `{"result":` + `"` + tsa.baseURL,
 				contentType: "application/json",
 			},
 		},
@@ -143,20 +118,90 @@ func TestAPIPostHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	r := NewShortenerRouter(args.repo)
-	ts := httptest.NewServer(r)
+	ts := getTestServer(nil)
 	defer ts.Close()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resp, body := testPostRequest(t, ts, "/api/shorten", tt.data)
+			resp, body := testRequest(t, ts, http.MethodPost, "/api/shorten", tt.data)
+			defer resp.Body.Close()
+
 			assert.Equal(t, tt.want.code, resp.StatusCode)
 			assert.Equal(t, tt.want.contentType, resp.Header.Get("Content-Type"))
-
 			if tt.checkInclude {
 				assert.Contains(t, body, tt.want.resp)
 			} else {
 				assert.Equal(t, tt.want.resp, body)
+			}
+		})
+	}
+}
+
+func TestWebGetFullURL(t *testing.T) {
+	type testCase struct {
+		name    string
+		want    httpRes
+		id      string
+		storage []storage.ShortURL
+	}
+
+	tests := []testCase{
+		{
+			name: "No ID query parameter",
+			id:   "",
+			want: httpRes{
+				code:        http.StatusOK,
+				contentType: "text/html; charset=utf-8",
+			},
+		},
+		{
+			name: "Incorrect ID parameter value",
+			id:   "foo",
+			want: httpRes{
+				code:        http.StatusBadRequest,
+				resp:        http.StatusText(http.StatusBadRequest),
+				contentType: "text/plain; charset=utf-8",
+			},
+		},
+		{
+			name:    "Correct ID parameter value",
+			id:      "googl",
+			storage: []storage.ShortURL{{ID: "googl", URL: "https://google.com", UID: UserID}},
+			want: httpRes{
+				code:        http.StatusTemporaryRedirect,
+				resp:        `https://google.com`,
+				contentType: "text/html; charset=utf-8",
+				location:    "https://google.com",
+			},
+		},
+	}
+
+	if err := os.Chdir("../../"); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := storage.NewMemoryRepo()
+			if _, err := db.Add(tt.storage); err != nil {
+				t.Fatal(err)
+			}
+
+			ts := getTestServer(db)
+			defer ts.Close()
+
+			path := "/"
+			if tt.id != "" {
+				path = path + tt.id
+			}
+
+			resp, body := testRequest(t, ts, http.MethodGet, path, "")
+			assert.Equal(t, tt.want.code, resp.StatusCode)
+			assert.Equal(t, tt.want.contentType, resp.Header.Get("Content-Type"))
+			assert.Equal(t, tt.want.location, resp.Header.Get("Location"))
+
+			if tt.want.resp != "" {
+				assert.Contains(t, body, tt.want.resp)
 			}
 
 			defer resp.Body.Close()

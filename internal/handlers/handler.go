@@ -19,20 +19,20 @@ func NewShortenerRouter(db storage.Storager) *chi.Mux {
 
 	r.Route("/", func(r chi.Router) {
 		r.Get("/", GetHomePage(cfg.Templates))
-		r.Post("/", WebPostHandler(db, cfg.BaseURL))
-		r.Get("/{id}", GetFullURL(db))
+		r.Post("/", WebShortener(db, cfg.BaseURL))
+		r.Get("/{id}", WebGetFullURL(db))
 		r.Get("/ping", Ping(db))
 
 		r.Route("/api", func(r chi.Router) {
 			r.Route("/shorten", func(r chi.Router) {
-				r.Post("/", APIPostHandler(db, cfg.BaseURL))
-				r.Post("/batch", Batch(db, cfg.BaseURL))
+				r.Post("/", APIShortener(db, cfg.BaseURL))
+				r.Post("/batch", APIBatchShortener(db, cfg.BaseURL))
 			})
 
 			r.Route("/user", func(r chi.Router) {
 				r.Route("/urls", func(r chi.Router) {
-					r.Get("/", UserURLsHandler(db, cfg.BaseURL))
-					r.Delete("/", DeleteShortURLs(db, cfg.Pool))
+					r.Get("/", GetUserLinks(db, cfg.BaseURL))
+					r.Delete("/", DeleteUserLinks(db, cfg.Pool))
 				})
 			})
 		})
