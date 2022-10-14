@@ -1,13 +1,14 @@
 package handlers
 
 import (
-	"github.com/stretchr/testify/assert"
 	"go-url-shortener/internal/apperrors"
 	"go-url-shortener/internal/storage"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestWebPostHandler(t *testing.T) {
@@ -63,7 +64,7 @@ func TestWebPostHandler(t *testing.T) {
 	}
 
 	if err := os.Chdir("../../"); err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	r := NewShortenerRouter(args.repo)
@@ -139,7 +140,7 @@ func TestAPIPostHandler(t *testing.T) {
 	}
 
 	if err := os.Chdir("../../"); err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	r := NewShortenerRouter(args.repo)

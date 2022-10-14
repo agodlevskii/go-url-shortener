@@ -1,12 +1,13 @@
 package handlers
 
 import (
-	"github.com/stretchr/testify/assert"
 	"go-url-shortener/internal/storage"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetFullURL(t *testing.T) {
@@ -57,7 +58,7 @@ func TestGetFullURL(t *testing.T) {
 	}
 
 	if err := os.Chdir("../../"); err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	for _, tt := range tests {

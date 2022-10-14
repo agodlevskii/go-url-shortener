@@ -1,8 +1,9 @@
 package validators
 
 import (
-	log "github.com/sirupsen/logrus"
 	"net/url"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func IsURLStringValid(rawURL string) bool {

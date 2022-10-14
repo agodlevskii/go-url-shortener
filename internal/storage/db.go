@@ -3,6 +3,7 @@ package storage
 import (
 	"database/sql"
 	"errors"
+
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/lib/pq"
 	log "github.com/sirupsen/logrus"

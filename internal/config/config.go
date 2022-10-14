@@ -2,12 +2,13 @@ package config
 
 import (
 	"flag"
-	"github.com/caarlos0/env"
-	log "github.com/sirupsen/logrus"
 	"html/template"
 	"os"
 	"path/filepath"
 	"sync"
+
+	"github.com/caarlos0/env"
+	log "github.com/sirupsen/logrus"
 )
 
 type Config struct {

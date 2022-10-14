@@ -2,11 +2,12 @@ package handlers
 
 import (
 	"encoding/json"
-	log "github.com/sirupsen/logrus"
 	"go-url-shortener/internal/apperrors"
 	"go-url-shortener/internal/middlewares"
 	"go-url-shortener/internal/storage"
 	"net/http"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func DeleteShortURLs(db storage.Storager, poolSize int) func(w http.ResponseWriter, r *http.Request) {

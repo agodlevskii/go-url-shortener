@@ -2,8 +2,9 @@ package apperrors
 
 import (
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"net/http"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -38,6 +39,18 @@ func EmptyError() *AppError {
 }
 
 func (e AppError) Error() string {
+	if e.Facade == "" && e.Err == nil {
+		return "[Empty]"
+	}
+
+	if e.Facade == "" {
+		return e.Err.Error()
+	}
+
+	if e.Err == nil {
+		return e.Facade
+	}
+
 	return fmt.Sprintf("[%s] %v", e.Facade, e.Err)
 }
 

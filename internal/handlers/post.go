@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
-	log "github.com/sirupsen/logrus"
 	"go-url-shortener/internal/apperrors"
 	"go-url-shortener/internal/generators"
 	"go-url-shortener/internal/middlewares"
@@ -11,6 +10,8 @@ import (
 	"go-url-shortener/internal/validators"
 	"io"
 	"net/http"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type PostRequest struct {

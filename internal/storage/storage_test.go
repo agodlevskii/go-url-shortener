@@ -1,8 +1,9 @@
 package storage
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 var UserID = "7190e4d4-fd9c-4b"

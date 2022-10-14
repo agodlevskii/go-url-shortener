@@ -3,10 +3,11 @@ package storage
 import (
 	"bufio"
 	"errors"
-	"github.com/kr/pretty"
-	log "github.com/sirupsen/logrus"
 	"go-url-shortener/internal/apperrors"
 	"os"
+
+	"github.com/kr/pretty"
+	log "github.com/sirupsen/logrus"
 )
 
 type FileRepo struct {

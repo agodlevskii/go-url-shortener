@@ -1,13 +1,14 @@
 package handlers
 
 import (
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	"go-url-shortener/internal/apperrors"
 	"go-url-shortener/internal/config"
 	"go-url-shortener/internal/middlewares"
 	"go-url-shortener/internal/storage"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 func NewShortenerRouter(db storage.Storager) *chi.Mux {

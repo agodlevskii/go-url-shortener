@@ -1,10 +1,11 @@
 package handlers
 
 import (
-	_ "github.com/jackc/pgx/v4"
 	"go-url-shortener/internal/apperrors"
 	"go-url-shortener/internal/storage"
 	"net/http"
+
+	_ "github.com/jackc/pgx/v4"
 )
 
 func Ping(db storage.Storager) func(w http.ResponseWriter, r *http.Request) {

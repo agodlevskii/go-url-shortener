@@ -3,8 +3,6 @@ package handlers
 import (
 	"bytes"
 	"errors"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"go-url-shortener/configs"
 	"go-url-shortener/internal/storage"
 	"io"
@@ -15,6 +13,9 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var UserIDEnc = "4b529d6712a1d59f62a87dc4fa54f332"
@@ -72,7 +73,7 @@ func testPostRequest(t *testing.T, ts *httptest.Server, path, data string) (*htt
 
 func TestNewShortenerRouter(t *testing.T) {
 	if err := os.Chdir("../../"); err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	r := NewShortenerRouter(storage.NewMemoryRepo())

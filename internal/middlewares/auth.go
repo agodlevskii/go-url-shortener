@@ -2,13 +2,14 @@ package middlewares
 
 import (
 	"crypto/aes"
-	"github.com/google/uuid"
-	log "github.com/sirupsen/logrus"
 	"go-url-shortener/configs"
 	"go-url-shortener/internal/apperrors"
 	"go-url-shortener/internal/encryptors"
 	"net/http"
 	"regexp"
+
+	"github.com/google/uuid"
+	log "github.com/sirupsen/logrus"
 )
 
 func Authorize(next http.Handler) http.Handler {
