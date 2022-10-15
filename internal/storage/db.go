@@ -150,3 +150,7 @@ func (repo DBRepo) Delete(batch []ShortURL) error {
 	_, err := repo.db.Exec("UPDATE urls SET deleted = true WHERE uid = $1 AND id = any($2)", userID, pq.Array(ids))
 	return err
 }
+
+func (repo DBRepo) Close() error {
+	return repo.db.Close()
+}

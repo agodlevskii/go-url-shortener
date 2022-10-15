@@ -26,6 +26,7 @@ type Storager interface {
 	GetAll(userID string) ([]ShortURL, error)
 	Has(id string) (bool, error)
 	Ping() bool
+	Close() error
 }
 
 // RepoStrSep describes the string that separates the ShortURL field values in the file-based Storager implementation.

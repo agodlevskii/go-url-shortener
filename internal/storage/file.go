@@ -197,3 +197,7 @@ func (f FileRepo) Delete(batch []ShortURL) error {
 	}
 	return nil
 }
+
+func (f FileRepo) Close() error {
+	return nil
+}

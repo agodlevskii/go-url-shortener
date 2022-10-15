@@ -1,17 +1,17 @@
 package main
 
 import (
-	"net/http"
-
 	log "github.com/sirupsen/logrus"
 	"go-url-shortener/internal/config"
 	"go-url-shortener/internal/handlers"
 	"go-url-shortener/internal/storage"
+	"net/http"
 )
 
 func main() {
 	cfg := config.GetConfig()
 	repo, err := getRepo(cfg)
+	defer repo.Close()
 	if err != nil {
 		log.Fatal(err)
 	}

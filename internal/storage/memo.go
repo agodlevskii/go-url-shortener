@@ -94,3 +94,7 @@ func (m *MemoRepo) Delete(batch []ShortURL) error {
 
 	return nil
 }
+
+func (m *MemoRepo) Close() error {
+	return nil
+}
