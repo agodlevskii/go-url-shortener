@@ -2,9 +2,10 @@ package generators
 
 import (
 	"errors"
-	"go-url-shortener/internal/apperrors"
 	"math/rand"
 	"time"
+
+	"go-url-shortener/internal/apperrors"
 )
 
 // letterBytes provides a list of the symbols that can be used for the random string generation.

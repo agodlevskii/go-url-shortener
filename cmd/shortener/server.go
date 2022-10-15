@@ -1,12 +1,12 @@
 package main
 
 import (
-	"go-url-shortener/internal/config"
-	"go-url-shortener/internal/handlers"
-	"go-url-shortener/internal/storage"
 	"net/http"
 
 	log "github.com/sirupsen/logrus"
+	"go-url-shortener/internal/config"
+	"go-url-shortener/internal/handlers"
+	"go-url-shortener/internal/storage"
 )
 
 func main() {
@@ -17,7 +17,9 @@ func main() {
 	}
 
 	r := handlers.NewShortenerRouter(repo)
-	http.ListenAndServe(cfg.Addr, r)
+	if err = http.ListenAndServe(cfg.Addr, r); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func getRepo(cfg *config.Config) (storage.Storager, error) {

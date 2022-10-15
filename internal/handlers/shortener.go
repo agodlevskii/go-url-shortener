@@ -3,13 +3,14 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"io"
+	"net/http"
+
 	"go-url-shortener/internal/apperrors"
 	"go-url-shortener/internal/generators"
 	"go-url-shortener/internal/middlewares"
 	"go-url-shortener/internal/storage"
 	"go-url-shortener/internal/validators"
-	"io"
-	"net/http"
 
 	"github.com/go-chi/chi/v5"
 
@@ -224,7 +225,7 @@ func shortenURL(db storage.Storager, userID, uri, baseURL string) (string, bool,
 // getBatch provides the short version of each URL provided in a batch request.
 // The function checks for the newly generated ID not to be associated with the existing DB entry.
 func getBatch(db storage.Storager, req []BatchReqData, userID string) ([]storage.ShortURL, error) {
-	var batch = make([]storage.ShortURL, len(req))
+	batch := make([]storage.ShortURL, len(req))
 	for i, data := range req {
 		id, err := generators.GenerateID(db, 7)
 		if err != nil {

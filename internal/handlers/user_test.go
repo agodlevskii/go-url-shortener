@@ -1,10 +1,11 @@
 package handlers
 
 import (
-	storage3 "go-url-shortener/internal/storage"
 	"net/http"
 	"os"
 	"testing"
+
+	storage3 "go-url-shortener/internal/storage"
 
 	"github.com/stretchr/testify/assert"
 )

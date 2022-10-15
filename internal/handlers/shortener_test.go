@@ -1,11 +1,12 @@
 package handlers
 
 import (
-	"go-url-shortener/internal/apperrors"
-	storage3 "go-url-shortener/internal/storage"
 	"net/http"
 	"os"
 	"testing"
+
+	"go-url-shortener/internal/apperrors"
+	storage3 "go-url-shortener/internal/storage"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -184,7 +185,7 @@ func TestWebGetFullURL(t *testing.T) {
 
 			path := "/"
 			if tt.id != "" {
-				path = path + tt.id
+				path += tt.id
 			}
 
 			resp, body := testRequest(t, ts, http.MethodGet, path, "")

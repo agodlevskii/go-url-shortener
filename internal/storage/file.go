@@ -3,8 +3,9 @@ package storage
 import (
 	"bufio"
 	"errors"
-	"go-url-shortener/internal/apperrors"
 	"os"
+
+	"go-url-shortener/internal/apperrors"
 
 	"github.com/kr/pretty"
 	log "github.com/sirupsen/logrus"
@@ -24,7 +25,7 @@ func NewFileRepo(filename string) (FileRepo, error) {
 		return FileRepo{}, errors.New(apperrors.FilenameMissing)
 	}
 
-	file, err := os.OpenFile(filename, os.O_CREATE|os.O_TRUNC, 0777)
+	file, err := os.OpenFile(filename, os.O_CREATE|os.O_TRUNC, 0o777)
 	if err != nil {
 		return FileRepo{}, err
 	}
@@ -36,7 +37,7 @@ func NewFileRepo(filename string) (FileRepo, error) {
 // If the file with the associated filename is missing, it will be created.
 // Otherwise, it will be opened for writing.
 func (f FileRepo) Add(batch []ShortURL) ([]ShortURL, error) {
-	file, err := os.OpenFile(f.filename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0777)
+	file, err := os.OpenFile(f.filename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0o777)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +64,7 @@ func (f FileRepo) Add(batch []ShortURL) ([]ShortURL, error) {
 // If the file with the associated filename is missing, it will be created.
 // Otherwise, it will be opened for reading.
 func (f FileRepo) Get(id string) (ShortURL, error) {
-	file, err := os.OpenFile(f.filename, os.O_RDONLY|os.O_CREATE, 0777)
+	file, err := os.OpenFile(f.filename, os.O_RDONLY|os.O_CREATE, 0o777)
 	if err != nil {
 		return ShortURL{}, err
 	}
@@ -87,7 +88,7 @@ func (f FileRepo) Get(id string) (ShortURL, error) {
 // If the repository doesn't have any associated value, the empty slice will be returned.
 // Otherwise, it will be opened for reading.
 func (f FileRepo) GetAll(userID string) ([]ShortURL, error) {
-	file, err := os.OpenFile(f.filename, os.O_RDONLY|os.O_CREATE, 0777)
+	file, err := os.OpenFile(f.filename, os.O_RDONLY|os.O_CREATE, 0o777)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +114,7 @@ func (f FileRepo) GetAll(userID string) ([]ShortURL, error) {
 // If the file with the associated filename is missing, it will be created.
 // Otherwise, it will be opened for reading.
 func (f FileRepo) Has(id string) (bool, error) {
-	file, err := os.OpenFile(f.filename, os.O_RDONLY|os.O_CREATE, 0777)
+	file, err := os.OpenFile(f.filename, os.O_RDONLY|os.O_CREATE, 0o777)
 	if err != nil {
 		return false, err
 	}
@@ -161,7 +162,7 @@ func (f FileRepo) Ping() bool {
 // If the file with the associated filename is missing, it will be created.
 // Otherwise, it will be opened for reading.
 func (f FileRepo) Delete(batch []ShortURL) error {
-	file, err := os.OpenFile(f.filename, os.O_RDONLY, 0777)
+	file, err := os.OpenFile(f.filename, os.O_RDONLY, 0o777)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return nil

@@ -2,11 +2,12 @@ package middlewares
 
 import (
 	"compress/gzip"
-	"go-url-shortener/internal/apperrors"
-	"go-url-shortener/internal/respwriters"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"go-url-shortener/internal/apperrors"
+	"go-url-shortener/internal/respwriters"
 )
 
 // Compress provides a gzip-based encryption for the response.

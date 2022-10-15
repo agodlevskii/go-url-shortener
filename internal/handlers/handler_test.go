@@ -3,7 +3,6 @@ package handlers
 import (
 	"bytes"
 	"errors"
-	"go-url-shortener/internal/storage"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -12,6 +11,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"go-url-shortener/internal/storage"
 
 	"github.com/stretchr/testify/assert"
 

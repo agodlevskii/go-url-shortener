@@ -1,11 +1,13 @@
 package handlers
 
 import (
-	"go-url-shortener/internal/apperrors"
-	"go-url-shortener/internal/storage"
 	"net/http"
 
-	_ "github.com/jackc/pgx/v4"
+	log "github.com/sirupsen/logrus"
+	"go-url-shortener/internal/apperrors"
+	"go-url-shortener/internal/storage"
+
+	_ "github.com/jackc/pgx/v4" // SQL driver
 )
 
 // Ping handles the DB status request.
@@ -19,6 +21,8 @@ func Ping(db storage.Storager) func(w http.ResponseWriter, r *http.Request) {
 
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("DB is up and running"))
+		if _, err := w.Write([]byte("DB is up and running")); err != nil {
+			log.Error(err)
+		}
 	}
 }

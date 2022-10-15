@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"errors"
 
-	_ "github.com/jackc/pgx/v4/stdlib"
+	_ "github.com/jackc/pgx/v4/stdlib" // SQL driver
 	"github.com/lib/pq"
 	log "github.com/sirupsen/logrus"
 )
@@ -22,7 +22,7 @@ func NewDBRepo(url string) (DBRepo, error) {
 		return DBRepo{}, err
 	}
 
-	_, err = db.Exec("CREATE TABLE IF NOT EXISTS urls (id VARCHAR(10), url VARCHAR(255), uid VARCHAR(16), deleted boolean, UNIQUE(id), UNIQUE (url))")
+	_, err = db.Exec("CREATE TABLE IF NOT EXISTS urls (id VARCHAR(10), url VARCHAR(255), uid VARCHAR(16), deleted boolean, UNIQUE(id), UNIQUE(url))")
 	if err != nil {
 		return DBRepo{}, err
 	}

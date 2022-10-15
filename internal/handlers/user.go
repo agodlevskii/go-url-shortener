@@ -2,10 +2,11 @@ package handlers
 
 import (
 	"encoding/json"
+	"net/http"
+
 	"go-url-shortener/internal/apperrors"
 	"go-url-shortener/internal/middlewares"
 	"go-url-shortener/internal/storage"
-	"net/http"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -25,7 +26,9 @@ func GetUserLinks(db storage.Storager, baseURL string) func(http.ResponseWriter,
 		if len(list) == 0 {
 			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			w.WriteHeader(http.StatusNoContent)
-			w.Write([]byte("No results found."))
+			if _, err = w.Write([]byte("No results found.")); err != nil {
+				log.Error(err)
+			}
 			return
 		}
 
