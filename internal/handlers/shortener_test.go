@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"go-url-shortener/internal/apperrors"
-	"go-url-shortener/internal/storage"
+	storage3 "go-url-shortener/internal/storage"
 	"net/http"
 	"os"
 	"testing"
@@ -134,7 +134,7 @@ func TestWebGetFullURL(t *testing.T) {
 		name    string
 		want    httpRes
 		id      string
-		storage []storage.ShortURL
+		storage []storage3.ShortURL
 	}
 
 	tests := []testCase{
@@ -158,7 +158,7 @@ func TestWebGetFullURL(t *testing.T) {
 		{
 			name:    "Correct ID parameter value",
 			id:      "googl",
-			storage: []storage.ShortURL{{ID: "googl", URL: "https://google.com", UID: UserID}},
+			storage: []storage3.ShortURL{{ID: "googl", URL: "https://google.com", UID: UserID}},
 			want: httpRes{
 				code:        http.StatusTemporaryRedirect,
 				resp:        `https://google.com`,
@@ -174,7 +174,7 @@ func TestWebGetFullURL(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := storage.NewMemoryRepo()
+			db := storage3.NewMemoryRepo()
 			if _, err := db.Add(tt.storage); err != nil {
 				t.Fatal(err)
 			}

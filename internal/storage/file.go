@@ -10,10 +10,15 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// FileRepo describes the file-based implementation of the Storager interface.
 type FileRepo struct {
 	filename string
 }
 
+// NewFileRepo returns a new instance of the FileRepo type.
+// If the filename is missing, the error will be returned.
+// If the file with the associated filename is missing, it will be created.
+// Otherwise, its content will be removed.
 func NewFileRepo(filename string) (FileRepo, error) {
 	if filename == "" {
 		return FileRepo{}, errors.New(apperrors.FilenameMissing)
@@ -27,6 +32,9 @@ func NewFileRepo(filename string) (FileRepo, error) {
 	return FileRepo{filename: filename}, file.Close()
 }
 
+// Add provides a functionality to save a slice of the ShortURL data into the file-based repository.
+// If the file with the associated filename is missing, it will be created.
+// Otherwise, it will be opened for writing.
 func (f FileRepo) Add(batch []ShortURL) ([]ShortURL, error) {
 	file, err := os.OpenFile(f.filename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0777)
 	if err != nil {
@@ -50,6 +58,10 @@ func (f FileRepo) Add(batch []ShortURL) ([]ShortURL, error) {
 	return res, file.Close()
 }
 
+// Get returns the ShortURL value by its ID.
+// If the value is missing from the repository, the error will be returned.
+// If the file with the associated filename is missing, it will be created.
+// Otherwise, it will be opened for reading.
 func (f FileRepo) Get(id string) (ShortURL, error) {
 	file, err := os.OpenFile(f.filename, os.O_RDONLY|os.O_CREATE, 0777)
 	if err != nil {
@@ -71,6 +83,9 @@ func (f FileRepo) Get(id string) (ShortURL, error) {
 	return ShortURL{}, errors.New(pretty.Sprintf("%s: %s", apperrors.URLNotFound, id))
 }
 
+// GetAll returns all the ShortURL values created by the specified user.
+// If the repository doesn't have any associated value, the empty slice will be returned.
+// Otherwise, it will be opened for reading.
 func (f FileRepo) GetAll(userID string) ([]ShortURL, error) {
 	file, err := os.OpenFile(f.filename, os.O_RDONLY|os.O_CREATE, 0777)
 	if err != nil {
@@ -94,6 +109,9 @@ func (f FileRepo) GetAll(userID string) ([]ShortURL, error) {
 	return urls, scanner.Err()
 }
 
+// Has checks if the repository contains the ShortURL with a specific ID.
+// If the file with the associated filename is missing, it will be created.
+// Otherwise, it will be opened for reading.
 func (f FileRepo) Has(id string) (bool, error) {
 	file, err := os.OpenFile(f.filename, os.O_RDONLY|os.O_CREATE, 0777)
 	if err != nil {
@@ -125,17 +143,23 @@ func (f FileRepo) Has(id string) (bool, error) {
 	return false, nil
 }
 
+// Clear removes the associated file from the hard drive.
 func (f FileRepo) Clear() {
 	if err := os.Remove(f.filename); err != nil && !errors.Is(err, os.ErrNotExist) {
 		log.Error(err)
 	}
 }
 
+// Ping checks if the associated file exists.
 func (f FileRepo) Ping() bool {
 	_, err := os.Stat(f.filename)
 	return err == nil
 }
 
+// Delete marks all specified ShortURL values in repository as deleted.
+// The deletion of the value is available only for its owner. All other values will be skipped.
+// If the file with the associated filename is missing, it will be created.
+// Otherwise, it will be opened for reading.
 func (f FileRepo) Delete(batch []ShortURL) error {
 	file, err := os.OpenFile(f.filename, os.O_RDONLY, 0777)
 	if err != nil {

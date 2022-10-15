@@ -1,3 +1,4 @@
+// Package storage includes the interfaces and functions related to the storing functionality.
 package storage
 
 import (
@@ -7,6 +8,7 @@ import (
 	"strings"
 )
 
+// ShortURL describes the type of data stored in the entities that implement the Storager interface.
 type ShortURL struct {
 	ID      string
 	URL     string
@@ -14,6 +16,7 @@ type ShortURL struct {
 	Deleted bool
 }
 
+// Storager describes the functionality that can be performed on the storage instance.
 type Storager interface {
 	Add(batch []ShortURL) ([]ShortURL, error)
 	Clear()
@@ -24,12 +27,17 @@ type Storager interface {
 	Ping() bool
 }
 
+// RepoStrSep describes the string that separates the ShortURL field values in the file-based Storager implementation.
 const RepoStrSep = " : "
 
+// ShortURLToRepoString converts the ShortURL instance into a string for the file-based Storager interface.
+// It uses the RepoStrSep constant to divide the field values.
 func ShortURLToRepoString(sURL ShortURL) string {
 	return sURL.ID + RepoStrSep + sURL.URL + RepoStrSep + sURL.UID + RepoStrSep + strconv.FormatBool(sURL.Deleted) + "\n"
 }
 
+// RepoStringToShortURL converts a string for the file-based Storager interface into the ShortURL instance.
+// It uses the RepoStrSep constant to divide the field values.
 func RepoStringToShortURL(str string) (ShortURL, error) {
 	entry := strings.Split(str, RepoStrSep)
 	if !isEntryValid(entry) {
@@ -44,6 +52,7 @@ func RepoStringToShortURL(str string) (ShortURL, error) {
 	}, nil
 }
 
+// isEntryValid validates the string for the file-based Storager, so it would include all ShortURL fields.
 func isEntryValid(entry []string) bool {
 	return len(entry) == 4
 }

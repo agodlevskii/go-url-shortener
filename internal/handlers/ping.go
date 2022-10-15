@@ -8,6 +8,8 @@ import (
 	_ "github.com/jackc/pgx/v4"
 )
 
+// Ping handles the DB status request.
+// If the ping fails, the user gets the error response.
 func Ping(db storage.Storager) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if ping := db.Ping(); !ping {

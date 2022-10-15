@@ -16,29 +16,42 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// PostRequest describes the body for a single URL shorten request coming from API.
 type PostRequest struct {
 	URL string `json:"url"`
 }
 
+// PostResponse describes the response of a single URL shorten request coming from API.
 type PostResponse struct {
 	Result string `json:"result"`
 }
 
+// UserLink describes the response for the list of all user's links.
+// Each entity includes both original and shortened URLs.
 type UserLink struct {
 	Short    string `json:"short_url"`
 	Original string `json:"original_url"`
 }
 
+// BatchReqData describes the body for a batch URL shorten request.
+// Each entity of a batch request must have a correlation ID to identify the shortened versions in the response.
+// The response structure is defined in BatchResData.
 type BatchReqData struct {
 	CorrelationID string `json:"correlation_id"`
 	OriginalURL   string `json:"original_url"`
 }
 
+// BatchResData describes the response of a batch URL shorten request.
+// Each entity of a batch response has a correlation ID to identify the shortened versions from the request.
+// The request structure is defined in BatchReqData.
 type BatchResData struct {
 	CorrelationID string `json:"correlation_id"`
 	ShortURL      string `json:"short_url"`
 }
 
+// APIShortener handles the URL shortener request through API.
+// The handler validates the request body to be a non-empty string of the valid format.
+// It generates the shortened version and stores it in storage.ShortURL format.
 func APIShortener(db storage.Storager, baseURL string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req PostRequest
@@ -79,6 +92,9 @@ func APIShortener(db storage.Storager, baseURL string) func(w http.ResponseWrite
 	}
 }
 
+// WebShortener handles the URL shortener request.
+// The handler validates the request body to be a non-empty string of the valid format.
+// It generates the shortened version and stores it in storage.ShortURL format.
 func WebShortener(db storage.Storager, baseURL string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		b, err := io.ReadAll(r.Body)
@@ -118,6 +134,9 @@ func WebShortener(db storage.Storager, baseURL string) func(w http.ResponseWrite
 	}
 }
 
+// APIBatchShortener handles the batch URL shortener request through API.
+// The handler validates the request body to match the BatchReqData format.
+// For each provided URL, the handler generates the shortened version and stores it in storage.ShortURL format.
 func APIBatchShortener(db storage.Storager, baseURL string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := middlewares.GetUserID(r)
@@ -147,13 +166,15 @@ func APIBatchShortener(db storage.Storager, baseURL string) func(w http.Response
 		resData := getResponseData(req, res, baseURL)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(201)
-		err = json.NewEncoder(w).Encode(resData)
-		if err != nil {
+		if err = json.NewEncoder(w).Encode(resData); err != nil {
 			apperrors.HandleInternalError(w)
 		}
 	}
 }
 
+// WebGetFullURL handles the URL redirect request.
+// The handler checks if the provided shortened URL exists and not marked as deleted.
+// If the validation passes, the application redirects the user to the original URL's location.
 func WebGetFullURL(db storage.Storager) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := chi.URLParam(r, "id")
@@ -172,6 +193,9 @@ func WebGetFullURL(db storage.Storager) func(w http.ResponseWriter, r *http.Requ
 	}
 }
 
+// shortenURL provides the short version of the provided URL via the random string generation.
+// The original URL goes through the validation process to avoid the redirect-related issues in the future.
+// The generated shortened URL is being checked not to be associated with the existing DB entry.
 func shortenURL(db storage.Storager, userID, uri, baseURL string) (string, bool, error) {
 	if !validators.IsURLStringValid(uri) {
 		return "", false, errors.New(apperrors.URLFormat)
@@ -197,6 +221,8 @@ func shortenURL(db storage.Storager, userID, uri, baseURL string) (string, bool,
 	return url, res[0].ID != id, nil
 }
 
+// getBatch provides the short version of each URL provided in a batch request.
+// The function checks for the newly generated ID not to be associated with the existing DB entry.
 func getBatch(db storage.Storager, req []BatchReqData, userID string) ([]storage.ShortURL, error) {
 	var batch = make([]storage.ShortURL, len(req))
 	for i, data := range req {
@@ -215,6 +241,8 @@ func getBatch(db storage.Storager, req []BatchReqData, userID string) ([]storage
 	return batch, nil
 }
 
+// getResponseData transforms the batch request into the batch response.
+// Each original URL has its own ID by this moment; the function only combines the existing data.
 func getResponseData(req []BatchReqData, res []storage.ShortURL, baseURL string) []BatchResData {
 	resData := make([]BatchResData, len(req))
 	urlToCorID := getURLToCorIDMap(req)
@@ -229,6 +257,8 @@ func getResponseData(req []BatchReqData, res []storage.ShortURL, baseURL string)
 	return resData
 }
 
+// getURLToCorIDMap transforms the batch request into the map with original URL as key and the correlation ID as value.
+// It is required to combine the shortened URL with associated correlation IDs.
 func getURLToCorIDMap(req []BatchReqData) map[string]string {
 	res := make(map[string]string, len(req))
 	for _, data := range req {

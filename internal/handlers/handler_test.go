@@ -3,7 +3,6 @@ package handlers
 import (
 	"bytes"
 	"errors"
-	"go-url-shortener/configs"
 	"go-url-shortener/internal/storage"
 	"io"
 	"net/http"
@@ -27,9 +26,10 @@ type httpRes struct {
 }
 
 const (
-	BaseURL   = "http://localhost:8080"
-	UserIDEnc = "4b529d6712a1d59f62a87dc4fa54f332"
-	UserID    = "7190e4d4-fd9c-4b"
+	BaseURL        = "http://localhost:8080"
+	UserIDEnc      = "4b529d6712a1d59f62a87dc4fa54f332"
+	UserID         = "7190e4d4-fd9c-4b"
+	UserCookieName = "user_id"
 )
 
 func TestNewShortenerRouter(t *testing.T) {
@@ -56,7 +56,7 @@ func testRequest(t *testing.T, ts *httptest.Server, method, path, data string) (
 	}
 
 	jar.SetCookies(purl, []*http.Cookie{
-		{Name: configs.UserCookieName, Value: UserIDEnc, Path: "/"},
+		{Name: UserCookieName, Value: UserIDEnc, Path: "/"},
 	})
 
 	client := &http.Client{

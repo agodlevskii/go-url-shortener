@@ -9,10 +9,13 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// DBRepo describes the SQL implementation of the Storager interface.
 type DBRepo struct {
 	db *sql.DB
 }
 
+// NewDBRepo returns a new instance of the DBRepo type.
+// If the DB didn't connect, or the DB table creation has failed, the error will be returned.
 func NewDBRepo(url string) (DBRepo, error) {
 	db, err := sql.Open("pgx", url)
 	if err != nil {
@@ -26,6 +29,8 @@ func NewDBRepo(url string) (DBRepo, error) {
 	return DBRepo{db: db}, nil
 }
 
+// Add provides a functionality to save a slice of the ShortURL data into the SQL repository.
+// If the insert fails, or the saved data fails to return, the changes will be rollback, and the error will be returned.
 func (repo DBRepo) Add(batch []ShortURL) ([]ShortURL, error) {
 	tx, err := repo.db.Begin()
 	if err != nil {
@@ -73,18 +78,25 @@ func (repo DBRepo) Add(batch []ShortURL) ([]ShortURL, error) {
 	return res, nil
 }
 
+// Has checks if the repository contains the ShortURL with a specific ID.
+// If the select query fails, the error will be returned.
 func (repo DBRepo) Has(id string) (bool, error) {
 	var cnt int64
 	err := repo.db.QueryRow("SELECT COUNT(*) FROM urls WHERE id = $1", id).Scan(&cnt)
 	return cnt != 0, err
 }
 
+// Get returns the ShortURL value by its ID.
+// If the select query fails, the error will be returned.
 func (repo DBRepo) Get(id string) (ShortURL, error) {
 	var sURL ShortURL
 	err := repo.db.QueryRow("SELECT * FROM urls WHERE id = $1", id).Scan(&sURL.ID, &sURL.URL, &sURL.UID, &sURL.Deleted)
 	return sURL, err
 }
 
+// GetAll returns all the ShortURL values created by the specified user.
+// If the repository doesn't have any associated value, the empty slice will be returned.
+// If the select query fails, the error will be returned.
 func (repo DBRepo) GetAll(userID string) ([]ShortURL, error) {
 	rows, err := repo.db.Query("SELECT * FROM urls WHERE uid = $1", userID)
 	if err != nil {
@@ -109,17 +121,21 @@ func (repo DBRepo) GetAll(userID string) ([]ShortURL, error) {
 	return urls, nil
 }
 
+// Clear marks all existing values in the repository as deleted.
 func (repo DBRepo) Clear() {
-	_, err := repo.db.Exec("UPDATE urls SET deleted = true")
-	if err != nil {
+	if _, err := repo.db.Exec("UPDATE urls SET deleted = true"); err != nil {
 		log.Error(err)
 	}
 }
 
+// Ping provides a proxy for the sql package's ping functionality.
 func (repo DBRepo) Ping() bool {
 	return repo.db.Ping() == nil
 }
 
+// Delete marks all specified ShortURL values in repository as deleted.
+// The deletion of the value is available only for its owner. All other values will be skipped.
+// If the update query fails, the error will be returned.
 func (repo DBRepo) Delete(batch []ShortURL) error {
 	if len(batch) == 0 {
 		return nil

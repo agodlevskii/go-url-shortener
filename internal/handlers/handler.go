@@ -1,3 +1,4 @@
+// Package handlers is required for registering all the application's routers.
 package handlers
 
 import (
@@ -11,6 +12,9 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
+// NewShortenerRouter creates a new application router with the required middleware attached.
+// For the unmatched route, the handler returns Method Not Allowed response.
+// The data required for the handlers' functionality is being passed to the handler or gets collected from the config.
 func NewShortenerRouter(db storage.Storager) *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middlewares.Authorize, middlewares.Compress, middlewares.Decompress)

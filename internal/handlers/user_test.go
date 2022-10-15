@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"go-url-shortener/internal/storage"
+	storage3 "go-url-shortener/internal/storage"
 	"net/http"
 	"os"
 	"testing"
@@ -14,7 +14,7 @@ const route = "/api/user/urls"
 func TestGetUserLinks(t *testing.T) {
 	tests := []struct {
 		name    string
-		storage []storage.ShortURL
+		storage []storage3.ShortURL
 		want    httpRes
 	}{
 		{
@@ -26,7 +26,7 @@ func TestGetUserLinks(t *testing.T) {
 		},
 		{
 			name: "One stored link",
-			storage: []storage.ShortURL{{
+			storage: []storage3.ShortURL{{
 				ID:      "id",
 				URL:     "url",
 				UID:     UserID,
@@ -46,7 +46,7 @@ func TestGetUserLinks(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := storage.NewMemoryRepo()
+			r := storage3.NewMemoryRepo()
 			if _, err := r.Add(tt.storage); err != nil {
 				t.Fatal(err)
 			}

@@ -9,6 +9,9 @@ import (
 	"strings"
 )
 
+// Compress provides a gzip-based encryption for the response.
+// If request has valid headers, Compress replaces default http.ResponseWriter with the custom respwriters.GzipWriter.
+// Otherwise, the default writer stays in charge.
 func Compress(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		enc := r.Header.Get("Accept-Encoding")
@@ -40,6 +43,9 @@ func Compress(next http.Handler) http.Handler {
 	})
 }
 
+// Decompress decrypts gzipped request.
+// If request has valid header, Decompress replaces default body reader with a gzip reader.
+// Otherwise, the default body reader stays in charge.
 func Decompress(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Content-Encoding") != "gzip" {

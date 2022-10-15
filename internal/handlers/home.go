@@ -6,6 +6,9 @@ import (
 	"net/http"
 )
 
+// GetHomePage handles the request for the index page.
+// The map of the templates is being passed from the main handler.
+// If the required template is missing from the map or malformed, the user gets an error response.
 func GetHomePage(tmpl map[string]*template.Template) func(w http.ResponseWriter, _ *http.Request) {
 	return func(w http.ResponseWriter, _ *http.Request) {
 		home, ok := tmpl["home"]

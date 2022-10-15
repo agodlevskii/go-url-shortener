@@ -10,6 +10,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// GetUserLinks returns the list of the user-associated links.
+// The user is being identified based on a request cookie.
+// The response includes full information on the stored link, including the deletion flag.
 func GetUserLinks(db storage.Storager, baseURL string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := middlewares.GetUserID(r)
@@ -34,6 +37,10 @@ func GetUserLinks(db storage.Storager, baseURL string) func(http.ResponseWriter,
 	}
 }
 
+// DeleteUserLinks deletes the specified entities from the list of the user-associated links.
+// The user is being identified based on a request cookie.
+// The links must be passed as an array of strings in the request body.
+// The handler doesn't remove the links, but validates the request and marks the passed entities for deletion.
 func DeleteUserLinks(db storage.Storager, poolSize int) func(w http.ResponseWriter, r *http.Request) {
 	pool := make(chan func(), poolSize)
 	for i := 0; i < poolSize; i++ {
@@ -67,6 +74,8 @@ func DeleteUserLinks(db storage.Storager, poolSize int) func(w http.ResponseWrit
 	}
 }
 
+// getLinks recovers the user-associated links from the repository.
+// In case if there are no links to return, the function returns nil instead of the empty slice.
 func getLinks(db storage.Storager, userID, baseURL string) []UserLink {
 	urls, err := db.GetAll(userID)
 	if err != nil {
@@ -89,6 +98,8 @@ func getLinks(db storage.Storager, userID, baseURL string) []UserLink {
 	return links
 }
 
+// getLinks deletes the user-associated links from the repository.
+// The listed entities remain in the repository, but each of them gets their deletion flag set to true.
 func deleteLinks(db storage.Storager, userID string, ids []string) {
 	batch := make([]storage.ShortURL, len(ids))
 	for i, v := range ids {
