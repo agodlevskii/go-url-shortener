@@ -16,9 +16,8 @@ func main() {
 	}
 
 	defer func(repo storage.Storager) {
-		err := repo.Close()
-		if err != nil {
-
+		if err := repo.Close(); err != nil {
+			log.Error(err)
 		}
 	}(repo)
 
