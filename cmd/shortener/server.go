@@ -11,10 +11,16 @@ import (
 func main() {
 	cfg := config.GetConfig()
 	repo, err := getRepo(cfg)
-	defer repo.Close()
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	defer func(repo storage.Storager) {
+		err := repo.Close()
+		if err != nil {
+
+		}
+	}(repo)
 
 	r := handlers.NewShortenerRouter(repo)
 	if err = http.ListenAndServe(cfg.Addr, r); err != nil {
