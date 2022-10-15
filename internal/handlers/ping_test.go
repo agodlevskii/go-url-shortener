@@ -42,6 +42,10 @@ func (m *mockDB) Delete(batch []storage.ShortURL) error {
 	return nil
 }
 
+func (m *mockDB) Close() error {
+	return nil
+}
+
 func TestPing(t *testing.T) {
 	tests := []struct {
 		name string
