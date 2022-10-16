@@ -1,10 +1,10 @@
 package generators
 
 import (
+	"go-url-shortener/internal/storage"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"go-url-shortener/internal/storage"
 )
 
 func TestGenerateID(t *testing.T) {

@@ -3,9 +3,8 @@ package storage
 import (
 	"bufio"
 	"errors"
-	"os"
-
 	"go-url-shortener/internal/apperrors"
+	"os"
 
 	"github.com/kr/pretty"
 	log "github.com/sirupsen/logrus"
@@ -41,7 +40,11 @@ func (f FileRepo) Add(batch []ShortURL) ([]ShortURL, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func(file *os.File) {
+		if cErr := file.Close(); cErr != nil {
+			log.Error(cErr)
+		}
+	}(file)
 
 	w := bufio.NewWriter(file)
 	for _, sURL := range batch {
@@ -68,7 +71,11 @@ func (f FileRepo) Get(id string) (ShortURL, error) {
 	if err != nil {
 		return ShortURL{}, err
 	}
-	defer file.Close()
+	defer func(file *os.File) {
+		if cErr := file.Close(); cErr != nil {
+			log.Error(cErr)
+		}
+	}(file)
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
@@ -92,7 +99,11 @@ func (f FileRepo) GetAll(userID string) ([]ShortURL, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func(file *os.File) {
+		if cErr := file.Close(); cErr != nil {
+			log.Error(cErr)
+		}
+	}(file)
 
 	urls := make([]ShortURL, 0)
 	scanner := bufio.NewScanner(file)
@@ -118,7 +129,11 @@ func (f FileRepo) Has(id string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	defer file.Close()
+	defer func(file *os.File) {
+		if cErr := file.Close(); cErr != nil {
+			log.Error(cErr)
+		}
+	}(file)
 
 	stat, err := file.Stat()
 	if err != nil {
@@ -169,7 +184,11 @@ func (f FileRepo) Delete(batch []ShortURL) error {
 		}
 		return err
 	}
-	defer file.Close()
+	defer func(file *os.File) {
+		if cErr := file.Close(); cErr != nil {
+			log.Error(cErr)
+		}
+	}(file)
 
 	IDtoSURL := make(map[string]ShortURL, len(batch))
 	for _, v := range batch {
@@ -179,9 +198,9 @@ func (f FileRepo) Delete(batch []ShortURL) error {
 	restore := make([]ShortURL, 0)
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		stored, err := RepoStringToShortURL(scanner.Text())
-		if err != nil {
-			return err
+		stored, sErr := RepoStringToShortURL(scanner.Text())
+		if sErr != nil {
+			return sErr
 		}
 
 		stored.Deleted = IDtoSURL[stored.ID].UID != ""

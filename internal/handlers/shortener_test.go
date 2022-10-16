@@ -1,12 +1,12 @@
 package handlers
 
 import (
+	"go-url-shortener/internal/apperrors"
+	"go-url-shortener/internal/storage"
+	"io"
 	"net/http"
 	"os"
 	"testing"
-
-	"go-url-shortener/internal/apperrors"
-	storage3 "go-url-shortener/internal/storage"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -67,7 +67,11 @@ func TestWebShortener(t *testing.T) {
 				assert.Equal(t, tt.want.resp, body)
 			}
 
-			defer resp.Body.Close()
+			defer func(Body io.ReadCloser) {
+				if err := Body.Close(); err != nil {
+					t.Fatal(err)
+				}
+			}(resp.Body)
 		})
 	}
 }
@@ -117,7 +121,11 @@ func TestAPIShortener(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resp, body := testRequest(t, ts, http.MethodPost, "/api/shorten", tt.data)
-			defer resp.Body.Close()
+			defer func(Body io.ReadCloser) {
+				if err := Body.Close(); err != nil {
+					t.Fatal(err)
+				}
+			}(resp.Body)
 
 			assert.Equal(t, tt.want.code, resp.StatusCode)
 			assert.Equal(t, tt.want.contentType, resp.Header.Get("Content-Type"))
@@ -132,10 +140,10 @@ func TestAPIShortener(t *testing.T) {
 
 func TestWebGetFullURL(t *testing.T) {
 	type testCase struct {
-		name    string
-		want    httpRes
-		id      string
-		storage []storage3.ShortURL
+		name   string
+		want   httpRes
+		id     string
+		stored []storage.ShortURL
 	}
 
 	tests := []testCase{
@@ -157,9 +165,9 @@ func TestWebGetFullURL(t *testing.T) {
 			},
 		},
 		{
-			name:    "Correct ID parameter value",
-			id:      "googl",
-			storage: []storage3.ShortURL{{ID: "googl", URL: "https://google.com", UID: UserID}},
+			name:   "Correct ID parameter value",
+			id:     "googl",
+			stored: []storage.ShortURL{{ID: "googl", URL: "https://google.com", UID: UserID}},
 			want: httpRes{
 				code:        http.StatusTemporaryRedirect,
 				resp:        `https://google.com`,
@@ -175,8 +183,8 @@ func TestWebGetFullURL(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := storage3.NewMemoryRepo()
-			if _, err := db.Add(tt.storage); err != nil {
+			db := storage.NewMemoryRepo()
+			if _, err := db.Add(tt.stored); err != nil {
 				t.Fatal(err)
 			}
 
@@ -197,7 +205,11 @@ func TestWebGetFullURL(t *testing.T) {
 				assert.Contains(t, body, tt.want.resp)
 			}
 
-			defer resp.Body.Close()
+			defer func(Body io.ReadCloser) {
+				if err := Body.Close(); err != nil {
+					t.Fatal(err)
+				}
+			}(resp.Body)
 		})
 	}
 }

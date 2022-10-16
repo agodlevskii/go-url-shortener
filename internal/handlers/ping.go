@@ -1,11 +1,11 @@
 package handlers
 
 import (
+	"go-url-shortener/internal/apperrors"
+	"go-url-shortener/internal/storage"
 	"net/http"
 
 	log "github.com/sirupsen/logrus"
-	"go-url-shortener/internal/apperrors"
-	"go-url-shortener/internal/storage"
 
 	_ "github.com/jackc/pgx/v4" // SQL driver
 )

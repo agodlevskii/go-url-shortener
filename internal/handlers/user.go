@@ -2,11 +2,10 @@ package handlers
 
 import (
 	"encoding/json"
-	"net/http"
-
 	"go-url-shortener/internal/apperrors"
 	"go-url-shortener/internal/middlewares"
 	"go-url-shortener/internal/storage"
+	"net/http"
 
 	log "github.com/sirupsen/logrus"
 )

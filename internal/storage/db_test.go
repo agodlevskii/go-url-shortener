@@ -14,10 +14,15 @@ func TestDBRepo_Add(t *testing.T) {
 	for _, tt := range getAddTestCases() {
 		t.Run(tt.name, func(t *testing.T) {
 			db, mock := getMock(t)
-			defer db.Close()
-			r := DBRepo{db: db}
+			defer func(db *sql.DB) {
+				if err := db.Close(); err != nil {
+					t.Fatal(err)
+				}
+			}(db)
 
+			r := DBRepo{db: db}
 			coverInitExpect(mock, tt.state)
+			mock.ExpectClose()
 			got, err := r.Add(tt.state)
 			assert.Equal(t, tt.wantErr, err != nil)
 			assert.Equal(t, tt.want.id, got[0].ID)
@@ -29,10 +34,14 @@ func TestDBRepo_Clear(t *testing.T) {
 	for _, tt := range getClearTestCases() {
 		t.Run(tt.name, func(t *testing.T) {
 			db, mock := getMock(t)
-			defer db.Close()
-			r := DBRepo{db: db}
+			defer func(db *sql.DB) {
+				if err := db.Close(); err != nil {
+					t.Fatal(err)
+				}
+			}(db)
 
-			q := regexp.QuoteMeta(`INSERT INTO urls(id, url, uid, deleted) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING RETURNING id`)
+			r := DBRepo{db: db}
+			q := regexp.QuoteMeta(AddURLs)
 			mock.ExpectBegin()
 			mock.ExpectPrepare(q)
 			for _, v := range tt.state {
@@ -41,8 +50,9 @@ func TestDBRepo_Clear(t *testing.T) {
 					WillReturnRows(mock.NewRows([]string{"id"}).AddRow(v.ID))
 			}
 			mock.ExpectCommit()
-			mock.ExpectExec("UPDATE urls SET deleted = true").
+			mock.ExpectExec(DeleteURL).
 				WillReturnResult(sqlmock.NewResult(1, 1))
+			mock.ExpectClose()
 
 			if _, err := r.Add(tt.state); err != nil {
 				t.Fatal(err)
@@ -56,18 +66,23 @@ func TestDBRepo_Delete(t *testing.T) {
 	for _, tt := range getDeleteTestCases() {
 		t.Run(tt.name, func(t *testing.T) {
 			db, mock := getMock(t)
-			defer db.Close()
-			r := DBRepo{db: db}
+			defer func(db *sql.DB) {
+				if err := db.Close(); err != nil {
+					t.Fatal(err)
+				}
+			}(db)
 
+			r := DBRepo{db: db}
 			ids := make([]string, len(tt.state))
 			for i, sURL := range tt.state {
 				ids[i] = sURL.ID
 			}
 
 			coverInitExpect(mock, tt.state)
-			mock.ExpectExec(regexp.QuoteMeta(`UPDATE urls SET deleted = true WHERE uid = $1 AND id = any($2)`)).
+			mock.ExpectExec(regexp.QuoteMeta(DeleteUserURLs)).
 				WithArgs(UserID, pq.Array(ids)).
 				WillReturnResult(sqlmock.NewResult(1, 1))
+			mock.ExpectClose()
 
 			if _, err := r.Add(tt.state); err != nil {
 				t.Fatal(err)
@@ -83,9 +98,13 @@ func TestDBRepo_Get(t *testing.T) {
 	for _, tt := range getGetTestCases() {
 		t.Run(tt.name, func(t *testing.T) {
 			db, mock := getMock(t)
-			defer db.Close()
-			r := DBRepo{db: db}
+			defer func(db *sql.DB) {
+				if err := db.Close(); err != nil {
+					t.Fatal(err)
+				}
+			}(db)
 
+			r := DBRepo{db: db}
 			var res ShortURL
 			for _, v := range tt.state {
 				if v.ID == tt.id {
@@ -94,12 +113,15 @@ func TestDBRepo_Get(t *testing.T) {
 			}
 
 			coverInitExpect(mock, tt.state)
-			eq := mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM urls WHERE id = $1`)).WithArgs(tt.id)
+			eq := mock.ExpectQuery(regexp.QuoteMeta(GetURL)).WithArgs(tt.id)
 			if tt.want != "" {
-				eq.WillReturnRows(sqlmock.NewRows([]string{"id", "url", "uid", "deleted"}).AddRow(res.ID, res.URL, res.UID, res.Deleted))
+				rows := sqlmock.NewRows([]string{"id", "url", "uid", "deleted"}).
+					AddRow(res.ID, res.URL, res.UID, res.Deleted)
+				eq.WillReturnRows(rows)
 			} else {
 				eq.WillReturnError(sql.ErrNoRows)
 			}
+			mock.ExpectClose()
 
 			if _, err := r.Add(tt.state); err != nil {
 				t.Fatal(err)
@@ -115,9 +137,13 @@ func TestDBRepo_GetAll(t *testing.T) {
 	for _, tt := range getGetAllTestCases() {
 		t.Run(tt.name, func(t *testing.T) {
 			db, mock := getMock(t)
-			defer db.Close()
-			r := DBRepo{db: db}
+			defer func(db *sql.DB) {
+				if err := db.Close(); err != nil {
+					t.Fatal(err)
+				}
+			}(db)
 
+			r := DBRepo{db: db}
 			ids := make([]string, len(tt.state))
 			for i, sURL := range tt.state {
 				ids[i] = sURL.ID
@@ -131,7 +157,8 @@ func TestDBRepo_GetAll(t *testing.T) {
 			}
 
 			coverInitExpect(mock, tt.state)
-			mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM urls WHERE uid = $1`)).WithArgs(UserID).WillReturnRows(rows)
+			mock.ExpectQuery(regexp.QuoteMeta(GetUserURLs)).WithArgs(UserID).WillReturnRows(rows)
+			mock.ExpectClose()
 
 			if _, err := r.Add(tt.state); err != nil {
 				t.Fatal(err)
@@ -157,7 +184,11 @@ func TestDBRepo_Has(t *testing.T) {
 	for _, tt := range getHasTestCases() {
 		t.Run(tt.name, func(t *testing.T) {
 			db, mock := getMock(t)
-			defer db.Close()
+			defer func(db *sql.DB) {
+				if err := db.Close(); err != nil {
+					t.Fatal(err)
+				}
+			}(db)
 			r := DBRepo{db: db}
 			var exp int64
 			if tt.want {
@@ -165,9 +196,10 @@ func TestDBRepo_Has(t *testing.T) {
 			}
 
 			coverInitExpect(mock, tt.state)
-			mock.ExpectQuery(regexp.QuoteMeta(`SELECT COUNT(*) FROM urls WHERE id = $1`)).
+			mock.ExpectQuery(regexp.QuoteMeta(HasURL)).
 				WithArgs(tt.id).
 				WillReturnRows(sqlmock.NewRows([]string{"cnt"}).AddRow(exp))
+			mock.ExpectClose()
 
 			if _, err := r.Add(tt.state); err != nil {
 				t.Fatal(err)
@@ -189,7 +221,7 @@ func getMock(t *testing.T) (*sql.DB, sqlmock.Sqlmock) {
 }
 
 func coverInitExpect(mock sqlmock.Sqlmock, state []ShortURL) {
-	q := regexp.QuoteMeta(`INSERT INTO urls(id, url, uid, deleted) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING RETURNING id`)
+	q := regexp.QuoteMeta(AddURLs)
 	mock.ExpectBegin()
 	mock.ExpectPrepare(q)
 	for _, v := range state {

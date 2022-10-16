@@ -2,12 +2,12 @@ package middlewares
 
 import (
 	"compress/gzip"
+	log "github.com/sirupsen/logrus"
+	"go-url-shortener/internal/apperrors"
+	"go-url-shortener/internal/respwriters"
 	"net/http"
 	"strconv"
 	"strings"
-
-	"go-url-shortener/internal/apperrors"
-	"go-url-shortener/internal/respwriters"
 )
 
 // Compress provides a gzip-based encryption for the response.
@@ -32,7 +32,11 @@ func Compress(next http.Handler) http.Handler {
 			apperrors.HandleHTTPError(w, apperrors.NewError("", err), http.StatusInternalServerError)
 			return
 		}
-		defer gz.Close()
+		defer func(gz *gzip.Writer) {
+			if cErr := gz.Close(); cErr != nil {
+				log.Error(cErr)
+			}
+		}(gz)
 
 		gzWriter := respwriters.GzipWriter{
 			ResponseWriter: w,
@@ -59,7 +63,11 @@ func Decompress(next http.Handler) http.Handler {
 			apperrors.HandleHTTPError(w, apperrors.NewError("", err), http.StatusInternalServerError)
 			return
 		}
-		defer gz.Close()
+		defer func(gz *gzip.Reader) {
+			if cErr := gz.Close(); cErr != nil {
+				log.Error(cErr)
+			}
+		}(gz)
 		r.Body = gz
 
 		next.ServeHTTP(w, r)

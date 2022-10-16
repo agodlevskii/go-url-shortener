@@ -2,9 +2,8 @@ package storage
 
 import (
 	"errors"
-	"sync"
-
 	"go-url-shortener/internal/apperrors"
+	"sync"
 )
 
 // MemoRepo describes the in-memo implementation of the Storager interface.

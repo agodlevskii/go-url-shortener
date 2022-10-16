@@ -3,10 +3,9 @@ package storage
 
 import (
 	"errors"
+	"go-url-shortener/internal/apperrors"
 	"strconv"
 	"strings"
-
-	"go-url-shortener/internal/apperrors"
 )
 
 // ShortURL describes the type of data stored in the entities that implement the Storager interface.

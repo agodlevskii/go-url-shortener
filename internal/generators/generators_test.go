@@ -2,7 +2,6 @@ package generators_test
 
 import (
 	"fmt"
-
 	"go-url-shortener/internal/generators"
 	"go-url-shortener/internal/storage"
 )

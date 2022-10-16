@@ -3,7 +3,6 @@ package generators
 
 import (
 	"errors"
-
 	"go-url-shortener/internal/apperrors"
 	"go-url-shortener/internal/storage"
 )

@@ -56,6 +56,7 @@ linters-settings:
     check-blank: false
   govet:
     # report about shadowed variables
+    check-shadowing: true
     fieldalignment: true
   golint:
     # minimal confidence for issues, default is 0.8
@@ -63,6 +64,10 @@ linters-settings:
   gofmt:
     # simplify code: gofmt with `-s` option, true by default
     simplify: true
+  goimports:
+    # put imports beginning with prefix after 3rd-party packages;
+    # it's a comma-separated list of prefixes
+    local-prefixes: github.com/agodlevskii/go-url-shortener
   goconst:
     # minimal length of string constant, 3 by default
     min-len: 2
@@ -122,6 +127,7 @@ linters:
   disable-all: true
   enable:
     #    - cyclop
+    #    - deadcode  # deprecated
     - depguard
     - dogsled
     #    - dupl
@@ -139,15 +145,19 @@ linters:
     #    - godot
     - godox
     - gofmt # On why gofmt when goimports is enabled - https://github.com/golang/go/issues/21476
+    - gofumpt
     - goheader
+    - goimports
     #    - gomnd
     #    - gomoddirectives
     #    - gomodguard
+    - gosec
     - gosimple
     - govet
     - depguard
     #    - ifshort
     #    - ireturn
+    - lll
     - makezero
     - misspell
     - ineffassign
@@ -159,9 +169,11 @@ linters:
     - nolintlint
     - prealloc
     - predeclared
+    - rowserrcheck
     - revive
     - staticcheck
     - stylecheck
+    #    - structcheck # deprecated
     #    - tagliatelle
     #    - testpackage
     #    - thelper
@@ -171,6 +183,7 @@ linters:
     - unparam
     - unused
     #    - varnamelen
+    #    - varcheck # deprecated
     - whitespace
 #    - wrapcheck
 #    - wsl

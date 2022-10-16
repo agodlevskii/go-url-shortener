@@ -3,12 +3,11 @@ package middlewares
 
 import (
 	"crypto/aes"
-	"net/http"
-	"regexp"
-
 	"go-url-shortener/internal/apperrors"
 	"go-url-shortener/internal/config"
 	"go-url-shortener/internal/encryptors"
+	"net/http"
+	"regexp"
 
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
@@ -23,8 +22,8 @@ func Authorize(next http.Handler) http.Handler {
 		cookie, err := r.Cookie(cfg.UserCookieName)
 
 		if err == nil {
-			valid, err := validateID(cookie.Value)
-			if err != nil {
+			valid, vErr := validateID(cookie.Value)
+			if vErr != nil {
 				apperrors.HandleHTTPError(w, apperrors.NewError("", err), http.StatusInternalServerError)
 				return
 			}

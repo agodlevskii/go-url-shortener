@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"errors"
+	"go-url-shortener/internal/storage"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -11,8 +12,6 @@ import (
 	"os"
 	"strings"
 	"testing"
-
-	"go-url-shortener/internal/storage"
 
 	"github.com/stretchr/testify/assert"
 
@@ -42,10 +41,14 @@ func TestNewShortenerRouter(t *testing.T) {
 	defer ts.Close()
 
 	resp, _ := testRequest(t, ts, http.MethodPut, "/", "")
+	defer func(Body io.ReadCloser) {
+		if err := Body.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}(resp.Body)
+
 	assert.Error(t, errors.New(http.StatusText(http.StatusMethodNotAllowed)))
 	assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
-
-	defer resp.Body.Close()
 }
 
 func testRequest(t *testing.T, ts *httptest.Server, method, path, data string) (*http.Response, string) {

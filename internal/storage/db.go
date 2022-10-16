@@ -9,6 +9,23 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const (
+	CreateURLTable = `CREATE TABLE IF NOT EXISTS urls(
+    	id VARCHAR(10),
+    	url VARCHAR(255),
+    	uid VARCHAR(16),
+    	deleted boolean,
+    	UNIQUE(id), UNIQUE(url))`
+	AddURLs = `INSERT INTO urls(id, url, uid, deleted) VALUES ($1, $2, $3, $4)
+                                        ON CONFLICT DO NOTHING RETURNING id`
+	HasURL         = `SELECT COUNT(*) FROM urls WHERE id = $1`
+	GetURLID       = `SELECT id FROM urls WHERE url = $1`
+	GetURL         = `SELECT * FROM urls WHERE id = $1`
+	GetUserURLs    = `SELECT * FROM urls WHERE uid = $1`
+	DeleteURL      = `UPDATE urls u SET deleted = true WHERE u.id <> '' IS NOT TRUE`
+	DeleteUserURLs = `UPDATE urls SET deleted = true WHERE uid = $1 AND id = any($2)`
+)
+
 // DBRepo describes the SQL implementation of the Storager interface.
 type DBRepo struct {
 	db *sql.DB
@@ -22,7 +39,7 @@ func NewDBRepo(url string) (DBRepo, error) {
 		return DBRepo{}, err
 	}
 
-	_, err = db.Exec("CREATE TABLE IF NOT EXISTS urls (id VARCHAR(10), url VARCHAR(255), uid VARCHAR(16), deleted boolean, UNIQUE(id), UNIQUE(url))")
+	_, err = db.Exec(CreateURLTable)
 	if err != nil {
 		return DBRepo{}, err
 	}
@@ -37,11 +54,15 @@ func (repo DBRepo) Add(batch []ShortURL) ([]ShortURL, error) {
 		return nil, err
 	}
 
-	stmt, err := tx.Prepare(`INSERT INTO urls(id, url, uid, deleted) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING RETURNING id`)
+	stmt, err := tx.Prepare(AddURLs)
 	if err != nil {
 		return nil, err
 	}
-	defer stmt.Close()
+	defer func(stmt *sql.Stmt) {
+		if cErr := stmt.Close(); cErr != nil {
+			log.Error(cErr)
+		}
+	}(stmt)
 
 	res := make([]ShortURL, len(batch))
 	for i, sURL := range batch {
@@ -50,7 +71,7 @@ func (repo DBRepo) Add(batch []ShortURL) ([]ShortURL, error) {
 		err = stmt.QueryRow(sURL.ID, sURL.URL, sURL.UID, sURL.Deleted).Scan(&newID)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
-				err = repo.db.QueryRow("SELECT id FROM urls WHERE url = $1", sURL.URL).Scan(&newID)
+				err = repo.db.QueryRow(GetURLID, sURL.URL).Scan(&newID)
 			}
 
 			if err != nil {
@@ -82,7 +103,7 @@ func (repo DBRepo) Add(batch []ShortURL) ([]ShortURL, error) {
 // If the select query fails, the error will be returned.
 func (repo DBRepo) Has(id string) (bool, error) {
 	var cnt int64
-	err := repo.db.QueryRow("SELECT COUNT(*) FROM urls WHERE id = $1", id).Scan(&cnt)
+	err := repo.db.QueryRow(HasURL, id).Scan(&cnt)
 	return cnt != 0, err
 }
 
@@ -90,7 +111,7 @@ func (repo DBRepo) Has(id string) (bool, error) {
 // If the select query fails, the error will be returned.
 func (repo DBRepo) Get(id string) (ShortURL, error) {
 	var sURL ShortURL
-	err := repo.db.QueryRow("SELECT * FROM urls WHERE id = $1", id).Scan(&sURL.ID, &sURL.URL, &sURL.UID, &sURL.Deleted)
+	err := repo.db.QueryRow(GetURL, id).Scan(&sURL.ID, &sURL.URL, &sURL.UID, &sURL.Deleted)
 	return sURL, err
 }
 
@@ -98,14 +119,18 @@ func (repo DBRepo) Get(id string) (ShortURL, error) {
 // If the repository doesn't have any associated value, the empty slice will be returned.
 // If the select query fails, the error will be returned.
 func (repo DBRepo) GetAll(userID string) ([]ShortURL, error) {
-	rows, err := repo.db.Query("SELECT * FROM urls WHERE uid = $1", userID)
+	rows, err := repo.db.Query(GetUserURLs, userID)
 	if err != nil {
 		return nil, err
 	}
 	if rows.Err() != nil {
 		return nil, rows.Err()
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		if cErr := rows.Close(); cErr != nil {
+			log.Error(cErr)
+		}
+	}(rows)
 
 	urls := make([]ShortURL, 0)
 	for rows.Next() {
@@ -123,7 +148,7 @@ func (repo DBRepo) GetAll(userID string) ([]ShortURL, error) {
 
 // Clear marks all existing values in the repository as deleted.
 func (repo DBRepo) Clear() {
-	if _, err := repo.db.Exec("UPDATE urls SET deleted = true"); err != nil {
+	if _, err := repo.db.Exec(DeleteURL); err != nil {
 		log.Error(err)
 	}
 }
@@ -147,7 +172,7 @@ func (repo DBRepo) Delete(batch []ShortURL) error {
 		ids[i] = sURL.ID
 	}
 
-	_, err := repo.db.Exec("UPDATE urls SET deleted = true WHERE uid = $1 AND id = any($2)", userID, pq.Array(ids))
+	_, err := repo.db.Exec(DeleteUserURLs, userID, pq.Array(ids))
 	return err
 }
 
