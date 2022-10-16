@@ -41,14 +41,12 @@ func TestNewShortenerRouter(t *testing.T) {
 	defer ts.Close()
 
 	resp, _ := testRequest(t, ts, http.MethodPut, "/", "")
-	defer func(Body io.ReadCloser) {
-		if err := Body.Close(); err != nil {
-			t.Fatal(err)
-		}
-	}(resp.Body)
-
 	assert.Error(t, errors.New(http.StatusText(http.StatusMethodNotAllowed)))
 	assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
+
+	if err := resp.Body.Close(); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func testRequest(t *testing.T, ts *httptest.Server, method, path, data string) (*http.Response, string) {
@@ -85,8 +83,8 @@ func testRequest(t *testing.T, ts *httptest.Server, method, path, data string) (
 	require.NoError(t, err)
 
 	defer func(Body io.ReadCloser) {
-		if err := Body.Close(); err != nil {
-			t.Error(err)
+		if cErr := Body.Close(); cErr != nil {
+			t.Error(cErr)
 		}
 	}(resp.Body)
 

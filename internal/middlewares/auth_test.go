@@ -2,7 +2,6 @@ package middlewares
 
 import (
 	"go-url-shortener/internal/encryptors"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -80,15 +79,14 @@ func TestGetUserID(t *testing.T) {
 			if err != nil {
 				return
 			}
-			defer func(Body io.ReadCloser) {
-				if cErr := Body.Close(); cErr != nil {
-					t.Fatal(cErr)
-				}
-			}(do.Body)
 
 			got, err := GetUserID(do.Request)
 			assert.Equal(t, tt.want, got)
 			assert.Equal(t, tt.wantErr, err != nil)
+
+			if cErr := do.Body.Close(); cErr != nil {
+				t.Fatal(cErr)
+			}
 		})
 	}
 }

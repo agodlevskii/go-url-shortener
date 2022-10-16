@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"go-url-shortener/internal/storage"
-	"io"
 	"net/http"
 	"os"
 	"testing"
@@ -84,15 +83,13 @@ func TestPing(t *testing.T) {
 			defer ts.Close()
 
 			resp, body := testRequest(t, ts, http.MethodGet, "/ping", "")
-			defer func(Body io.ReadCloser) {
-				if err := Body.Close(); err != nil {
-					t.Fatal(err)
-				}
-			}(resp.Body)
-
 			assert.Equal(t, tt.want.code, resp.StatusCode)
 			assert.Equal(t, tt.want.contentType, resp.Header.Get("Content-Type"))
 			assert.Equal(t, tt.want.resp, body)
+
+			if err := resp.Body.Close(); err != nil {
+				t.Fatal(err)
+			}
 		})
 	}
 }
