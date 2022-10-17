@@ -1,9 +1,10 @@
 package handlers
 
 import (
-	"go-url-shortener/internal/apperrors"
 	"html/template"
 	"net/http"
+
+	"go-url-shortener/internal/apperrors"
 )
 
 // GetHomePage handles the request for the index page.

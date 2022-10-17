@@ -1,8 +1,9 @@
 package generators
 
 import (
-	"go-url-shortener/internal/storage"
 	"testing"
+
+	"go-url-shortener/internal/storage"
 
 	"github.com/stretchr/testify/assert"
 )

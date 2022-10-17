@@ -3,8 +3,9 @@ package storage
 import (
 	"bufio"
 	"errors"
-	"go-url-shortener/internal/apperrors"
 	"os"
+
+	"go-url-shortener/internal/apperrors"
 
 	"github.com/kr/pretty"
 	log "github.com/sirupsen/logrus"

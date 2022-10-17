@@ -1,11 +1,12 @@
 package main
 
 import (
+	"net/http"
+	"time"
+
 	"go-url-shortener/internal/config"
 	"go-url-shortener/internal/handlers"
 	"go-url-shortener/internal/storage"
-	"net/http"
-	"time"
 
 	log "github.com/sirupsen/logrus"
 )

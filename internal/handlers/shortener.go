@@ -3,13 +3,14 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"io"
+	"net/http"
+
 	"go-url-shortener/internal/apperrors"
 	"go-url-shortener/internal/generators"
 	"go-url-shortener/internal/middlewares"
 	"go-url-shortener/internal/storage"
 	"go-url-shortener/internal/validators"
-	"io"
-	"net/http"
 
 	"github.com/go-chi/chi/v5"
 

@@ -1,11 +1,12 @@
 package handlers
 
 import (
-	"go-url-shortener/internal/apperrors"
-	"go-url-shortener/internal/storage"
 	"net/http"
 	"os"
 	"testing"
+
+	"go-url-shortener/internal/apperrors"
+	"go-url-shortener/internal/storage"
 
 	"github.com/stretchr/testify/assert"
 )

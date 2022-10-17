@@ -1,9 +1,10 @@
 package handlers
 
 import (
+	"net/http"
+
 	"go-url-shortener/internal/apperrors"
 	"go-url-shortener/internal/storage"
-	"net/http"
 
 	log "github.com/sirupsen/logrus"
 

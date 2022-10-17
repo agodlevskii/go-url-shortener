@@ -2,12 +2,13 @@ package middlewares
 
 import (
 	"compress/gzip"
-	log "github.com/sirupsen/logrus"
-	"go-url-shortener/internal/apperrors"
-	"go-url-shortener/internal/respwriters"
 	"net/http"
 	"strconv"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
+	"go-url-shortener/internal/apperrors"
+	"go-url-shortener/internal/respwriters"
 )
 
 // Compress provides a gzip-based encryption for the response.

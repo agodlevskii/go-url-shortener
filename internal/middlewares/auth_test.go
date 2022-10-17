@@ -1,11 +1,12 @@
 package middlewares
 
 import (
-	"go-url-shortener/internal/encryptors"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
+
+	"go-url-shortener/internal/encryptors"
 
 	"github.com/stretchr/testify/assert"
 )
