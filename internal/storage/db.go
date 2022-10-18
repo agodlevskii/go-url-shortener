@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 
@@ -33,13 +34,13 @@ type DBRepo struct {
 
 // NewDBRepo returns a new instance of the DBRepo type.
 // If the DB didn't connect, or the DB table creation has failed, the error will be returned.
-func NewDBRepo(url string) (DBRepo, error) {
+func NewDBRepo(ctx context.Context, url string) (DBRepo, error) {
 	db, err := sql.Open("pgx", url)
 	if err != nil {
 		return DBRepo{}, err
 	}
 
-	_, err = db.Exec(CreateURLTable)
+	_, err = db.ExecContext(ctx, CreateURLTable)
 	if err != nil {
 		return DBRepo{}, err
 	}
@@ -48,13 +49,13 @@ func NewDBRepo(url string) (DBRepo, error) {
 
 // Add provides a functionality to save a slice of the ShortURL data into the SQL repository.
 // If the insert fails, or the saved data fails to return, the changes will be rollback, and the error will be returned.
-func (repo DBRepo) Add(batch []ShortURL) ([]ShortURL, error) {
-	tx, err := repo.db.Begin()
+func (repo DBRepo) Add(ctx context.Context, batch []ShortURL) ([]ShortURL, error) {
+	tx, err := repo.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	stmt, err := tx.Prepare(AddURLs)
+	stmt, err := tx.PrepareContext(ctx, AddURLs)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +72,7 @@ func (repo DBRepo) Add(batch []ShortURL) ([]ShortURL, error) {
 		err = stmt.QueryRow(sURL.ID, sURL.URL, sURL.UID, sURL.Deleted).Scan(&newID)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
-				err = repo.db.QueryRow(GetURLID, sURL.URL).Scan(&newID)
+				err = repo.db.QueryRowContext(ctx, GetURLID, sURL.URL).Scan(&newID)
 			}
 
 			if err != nil {
@@ -101,25 +102,25 @@ func (repo DBRepo) Add(batch []ShortURL) ([]ShortURL, error) {
 
 // Has checks if the repository contains the ShortURL with a specific ID.
 // If the select query fails, the error will be returned.
-func (repo DBRepo) Has(id string) (bool, error) {
+func (repo DBRepo) Has(ctx context.Context, id string) (bool, error) {
 	var cnt int64
-	err := repo.db.QueryRow(HasURL, id).Scan(&cnt)
+	err := repo.db.QueryRowContext(ctx, HasURL, id).Scan(&cnt)
 	return cnt != 0, err
 }
 
 // Get returns the ShortURL value by its ID.
 // If the select query fails, the error will be returned.
-func (repo DBRepo) Get(id string) (ShortURL, error) {
+func (repo DBRepo) Get(ctx context.Context, id string) (ShortURL, error) {
 	var sURL ShortURL
-	err := repo.db.QueryRow(GetURL, id).Scan(&sURL.ID, &sURL.URL, &sURL.UID, &sURL.Deleted)
+	err := repo.db.QueryRowContext(ctx, GetURL, id).Scan(&sURL.ID, &sURL.URL, &sURL.UID, &sURL.Deleted)
 	return sURL, err
 }
 
 // GetAll returns all the ShortURL values created by the specified user.
 // If the repository doesn't have any associated value, the empty slice will be returned.
 // If the select query fails, the error will be returned.
-func (repo DBRepo) GetAll(userID string) ([]ShortURL, error) {
-	rows, err := repo.db.Query(GetUserURLs, userID)
+func (repo DBRepo) GetAll(ctx context.Context, userID string) ([]ShortURL, error) {
+	rows, err := repo.db.QueryContext(ctx, GetUserURLs, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -147,21 +148,21 @@ func (repo DBRepo) GetAll(userID string) ([]ShortURL, error) {
 }
 
 // Clear marks all existing values in the repository as deleted.
-func (repo DBRepo) Clear() {
-	if _, err := repo.db.Exec(DeleteURL); err != nil {
+func (repo DBRepo) Clear(ctx context.Context) {
+	if _, err := repo.db.ExecContext(ctx, DeleteURL); err != nil {
 		log.Error(err)
 	}
 }
 
 // Ping provides a proxy for the sql package's ping functionality.
-func (repo DBRepo) Ping() bool {
-	return repo.db.Ping() == nil
+func (repo DBRepo) Ping(ctx context.Context) bool {
+	return repo.db.PingContext(ctx) == nil
 }
 
 // Delete marks all specified ShortURL values in repository as deleted.
 // The deletion of the value is available only for its owner. All other values will be skipped.
 // If the update query fails, the error will be returned.
-func (repo DBRepo) Delete(batch []ShortURL) error {
+func (repo DBRepo) Delete(ctx context.Context, batch []ShortURL) error {
 	if len(batch) == 0 {
 		return nil
 	}
@@ -172,7 +173,7 @@ func (repo DBRepo) Delete(batch []ShortURL) error {
 		ids[i] = sURL.ID
 	}
 
-	_, err := repo.db.Exec(DeleteUserURLs, userID, pq.Array(ids))
+	_, err := repo.db.ExecContext(ctx, DeleteUserURLs, userID, pq.Array(ids))
 	return err
 }
 

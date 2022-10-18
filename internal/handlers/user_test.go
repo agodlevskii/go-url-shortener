@@ -1,8 +1,9 @@
 package handlers
 
 import (
+	"context"
+	"io"
 	"net/http"
-	"os"
 	"testing"
 
 	storage3 "go-url-shortener/internal/storage"
@@ -41,14 +42,10 @@ func TestGetUserLinks(t *testing.T) {
 		},
 	}
 
-	if err := os.Chdir("../../"); err != nil {
-		t.Fatal(err)
-	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := storage3.NewMemoryRepo()
-			if _, err := r.Add(tt.storage); err != nil {
+			if _, err := r.Add(context.Background(), tt.storage); err != nil {
 				t.Fatal(err)
 			}
 
@@ -56,7 +53,11 @@ func TestGetUserLinks(t *testing.T) {
 			defer ts.Close()
 
 			resp, body := testRequest(t, ts, http.MethodGet, route, "")
-			defer resp.Body.Close()
+			defer func(Body io.ReadCloser) {
+				if cErr := Body.Close(); cErr != nil {
+					t.Fatal(cErr)
+				}
+			}(resp.Body)
 
 			assert.Equal(t, tt.want.code, resp.StatusCode)
 			assert.Equal(t, tt.want.contentType, resp.Header.Get("Content-Type"))
@@ -96,17 +97,17 @@ func TestDeleteUserLinks(t *testing.T) {
 		},
 	}
 
-	if err := os.Chdir("../../"); err != nil {
-		t.Fatal(err)
-	}
-
 	ts := getTestServer(nil)
 	defer ts.Close()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resp, body := testRequest(t, ts, http.MethodDelete, route, tt.data)
-			defer resp.Body.Close()
+			defer func(Body io.ReadCloser) {
+				if err := Body.Close(); err != nil {
+					t.Fatal(err)
+				}
+			}(resp.Body)
 
 			assert.Equal(t, tt.want.code, resp.StatusCode)
 			assert.Equal(t, tt.want.contentType, resp.Header.Get("Content-Type"))

@@ -8,7 +8,6 @@ import (
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
-	"os"
 	"strings"
 	"testing"
 
@@ -34,10 +33,6 @@ const (
 )
 
 func TestNewShortenerRouter(t *testing.T) {
-	if err := os.Chdir("../../"); err != nil {
-		t.Fatal(err)
-	}
-
 	ts := getTestServer(nil)
 	defer ts.Close()
 

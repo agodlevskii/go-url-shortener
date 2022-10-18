@@ -2,6 +2,7 @@
 package storage
 
 import (
+	"context"
 	"errors"
 	"strconv"
 	"strings"
@@ -19,13 +20,13 @@ type ShortURL struct {
 
 // Storager describes the functionality that can be performed on the storage instance.
 type Storager interface {
-	Add(batch []ShortURL) ([]ShortURL, error)
-	Clear()
-	Delete(batch []ShortURL) error
-	Get(id string) (ShortURL, error)
-	GetAll(userID string) ([]ShortURL, error)
-	Has(id string) (bool, error)
-	Ping() bool
+	Add(ctx context.Context, batch []ShortURL) ([]ShortURL, error)
+	Clear(ctx context.Context)
+	Delete(ctx context.Context, batch []ShortURL) error
+	Get(ctx context.Context, id string) (ShortURL, error)
+	GetAll(ctx context.Context, userID string) ([]ShortURL, error)
+	Has(ctx context.Context, id string) (bool, error)
+	Ping(ctx context.Context) bool
 	Close() error
 }
 

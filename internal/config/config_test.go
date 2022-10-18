@@ -1,21 +1,15 @@
 package config
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGetConfig(t *testing.T) {
-	if err := os.Chdir("../../"); err != nil {
-		t.Fatal(err)
-	}
-
 	tests := []struct {
-		name          string
-		want          *Config
-		wantTemplates int
+		name string
+		want *Config
 	}{
 		{
 			name: "Default config",
@@ -24,7 +18,6 @@ func TestGetConfig(t *testing.T) {
 				BaseURL: "http://localhost:8080",
 				Pool:    10,
 			},
-			wantTemplates: 1,
 		},
 	}
 	for _, tt := range tests {
@@ -33,7 +26,6 @@ func TestGetConfig(t *testing.T) {
 			assert.Equal(t, tt.want.Addr, got.Addr)
 			assert.Equal(t, tt.want.BaseURL, got.BaseURL)
 			assert.Equal(t, tt.want.Pool, got.Pool)
-			assert.Equal(t, tt.wantTemplates, len(got.Templates))
 		})
 	}
 }

@@ -1,8 +1,8 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
-	"os"
 	"testing"
 
 	"go-url-shortener/internal/storage"
@@ -15,30 +15,30 @@ type mockDB struct {
 	mock.Mock
 }
 
-func (m *mockDB) Ping() bool {
+func (m *mockDB) Ping(context.Context) bool {
 	args := m.Called()
 	return args.Bool(0)
 }
 
-func (m *mockDB) Add([]storage.ShortURL) ([]storage.ShortURL, error) {
+func (m *mockDB) Add(context.Context, []storage.ShortURL) ([]storage.ShortURL, error) {
 	return nil, nil
 }
 
-func (m *mockDB) Clear() {}
+func (m *mockDB) Clear(context.Context) {}
 
-func (m *mockDB) Get(string) (storage.ShortURL, error) {
+func (m *mockDB) Get(context.Context, string) (storage.ShortURL, error) {
 	return storage.ShortURL{}, nil
 }
 
-func (m *mockDB) GetAll(string) ([]storage.ShortURL, error) {
+func (m *mockDB) GetAll(context.Context, string) ([]storage.ShortURL, error) {
 	return nil, nil
 }
 
-func (m *mockDB) Has(string) (bool, error) {
+func (m *mockDB) Has(context.Context, string) (bool, error) {
 	return true, nil
 }
 
-func (m *mockDB) Delete([]storage.ShortURL) error {
+func (m *mockDB) Delete(context.Context, []storage.ShortURL) error {
 	return nil
 }
 
@@ -69,10 +69,6 @@ func TestPing(t *testing.T) {
 				contentType: "text/plain; charset=utf-8",
 			},
 		},
-	}
-
-	if err := os.Chdir("../../"); err != nil {
-		t.Fatal(err)
 	}
 
 	for _, tt := range tests {

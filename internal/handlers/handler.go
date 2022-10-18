@@ -23,7 +23,7 @@ func NewShortenerRouter(db storage.Storager) *chi.Mux {
 	cfg := config.GetConfig()
 
 	r.Route("/", func(r chi.Router) {
-		r.Get("/", GetHomePage(cfg.Templates))
+		r.Get("/", GetHomePage)
 		r.Post("/", WebShortener(db, cfg.BaseURL))
 		r.Get("/{id}", WebGetFullURL(db))
 		r.Get("/ping", Ping(db))

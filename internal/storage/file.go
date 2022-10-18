@@ -2,8 +2,10 @@ package storage
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"os"
+	"path"
 
 	"go-url-shortener/internal/apperrors"
 
@@ -20,24 +22,25 @@ type FileRepo struct {
 // If the filename is missing, the error will be returned.
 // If the file with the associated filename is missing, it will be created.
 // Otherwise, its content will be removed.
-func NewFileRepo(filename string) (FileRepo, error) {
-	if filename == "" {
+func NewFileRepo(fName string) (FileRepo, error) {
+	if fName == "" {
 		return FileRepo{}, errors.New(apperrors.FilenameMissing)
 	}
 
-	file, err := os.OpenFile(filename, os.O_CREATE|os.O_TRUNC, 0o777)
+	fName = path.Clean(fName)
+	file, err := os.OpenFile(fName, os.O_CREATE|os.O_TRUNC, 0o777)
 	if err != nil {
 		return FileRepo{}, err
 	}
 
-	return FileRepo{filename: filename}, file.Close()
+	return FileRepo{filename: fName}, file.Close()
 }
 
 // Add provides a functionality to save a slice of the ShortURL data into the file-based repository.
 // If the file with the associated filename is missing, it will be created.
 // Otherwise, it will be opened for writing.
-func (f FileRepo) Add(batch []ShortURL) ([]ShortURL, error) {
-	file, err := os.OpenFile(f.filename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0o777)
+func (f FileRepo) Add(_ context.Context, batch []ShortURL) ([]ShortURL, error) {
+	file, err := os.OpenFile(path.Clean(f.filename), os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0o777)
 	if err != nil {
 		return nil, err
 	}
@@ -67,8 +70,8 @@ func (f FileRepo) Add(batch []ShortURL) ([]ShortURL, error) {
 // If the value is missing from the repository, the error will be returned.
 // If the file with the associated filename is missing, it will be created.
 // Otherwise, it will be opened for reading.
-func (f FileRepo) Get(id string) (ShortURL, error) {
-	file, err := os.OpenFile(f.filename, os.O_RDONLY|os.O_CREATE, 0o777)
+func (f FileRepo) Get(_ context.Context, id string) (ShortURL, error) {
+	file, err := os.OpenFile(path.Clean(f.filename), os.O_RDONLY|os.O_CREATE, 0o777)
 	if err != nil {
 		return ShortURL{}, err
 	}
@@ -95,8 +98,8 @@ func (f FileRepo) Get(id string) (ShortURL, error) {
 // GetAll returns all the ShortURL values created by the specified user.
 // If the repository doesn't have any associated value, the empty slice will be returned.
 // Otherwise, it will be opened for reading.
-func (f FileRepo) GetAll(userID string) ([]ShortURL, error) {
-	file, err := os.OpenFile(f.filename, os.O_RDONLY|os.O_CREATE, 0o777)
+func (f FileRepo) GetAll(_ context.Context, userID string) ([]ShortURL, error) {
+	file, err := os.OpenFile(path.Clean(f.filename), os.O_RDONLY|os.O_CREATE, 0o777)
 	if err != nil {
 		return nil, err
 	}
@@ -125,8 +128,8 @@ func (f FileRepo) GetAll(userID string) ([]ShortURL, error) {
 // Has checks if the repository contains the ShortURL with a specific ID.
 // If the file with the associated filename is missing, it will be created.
 // Otherwise, it will be opened for reading.
-func (f FileRepo) Has(id string) (bool, error) {
-	file, err := os.OpenFile(f.filename, os.O_RDONLY|os.O_CREATE, 0o777)
+func (f FileRepo) Has(_ context.Context, id string) (bool, error) {
+	file, err := os.OpenFile(path.Clean(f.filename), os.O_RDONLY|os.O_CREATE, 0o777)
 	if err != nil {
 		return false, err
 	}
@@ -161,15 +164,15 @@ func (f FileRepo) Has(id string) (bool, error) {
 }
 
 // Clear removes the associated file from the hard drive.
-func (f FileRepo) Clear() {
-	if err := os.Remove(f.filename); err != nil && !errors.Is(err, os.ErrNotExist) {
+func (f FileRepo) Clear(_ context.Context) {
+	if err := os.Remove(path.Clean(f.filename)); err != nil && !errors.Is(err, os.ErrNotExist) {
 		log.Error(err)
 	}
 }
 
 // Ping checks if the associated file exists.
-func (f FileRepo) Ping() bool {
-	_, err := os.Stat(f.filename)
+func (f FileRepo) Ping(_ context.Context) bool {
+	_, err := os.Stat(path.Clean(f.filename))
 	return err == nil
 }
 
@@ -177,8 +180,8 @@ func (f FileRepo) Ping() bool {
 // The deletion of the value is available only for its owner. All other values will be skipped.
 // If the file with the associated filename is missing, it will be created.
 // Otherwise, it will be opened for reading.
-func (f FileRepo) Delete(batch []ShortURL) error {
-	file, err := os.OpenFile(f.filename, os.O_RDONLY, 0o777)
+func (f FileRepo) Delete(_ context.Context, batch []ShortURL) error {
+	file, err := os.OpenFile(path.Clean(f.filename), os.O_RDONLY, 0o777)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return nil
@@ -211,8 +214,8 @@ func (f FileRepo) Delete(batch []ShortURL) error {
 	if scanner.Err() != nil {
 		return scanner.Err()
 	}
-	f.Clear()
-	if _, err = f.Add(restore); err != nil {
+	f.Clear(context.Background())
+	if _, err = f.Add(context.Background(), restore); err != nil {
 		return err
 	}
 	return nil

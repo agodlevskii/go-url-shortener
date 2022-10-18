@@ -3,7 +3,6 @@ package middlewares
 import (
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"reflect"
 	"testing"
 
@@ -49,10 +48,6 @@ func TestCompress(t *testing.T) {
 		},
 	}
 
-	if err := os.Chdir("../../"); err != nil {
-		t.Fatal(err)
-	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -90,10 +85,6 @@ func TestDecompress(t *testing.T) {
 			ct:   "gzip",
 			want: want{writer: "*httptest.ResponseRecorder"},
 		},
-	}
-
-	if err := os.Chdir("../../"); err != nil {
-		t.Fatal(err)
 	}
 
 	for _, tt := range tests {

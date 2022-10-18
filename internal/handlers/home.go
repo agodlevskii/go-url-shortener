@@ -1,27 +1,18 @@
 package handlers
 
 import (
-	"html/template"
 	"net/http"
 
-	"go-url-shortener/internal/apperrors"
+	log "github.com/sirupsen/logrus"
 )
 
 // GetHomePage handles the request for the index page.
 // The map of the templates is being passed from the main handler.
 // If the required template is missing from the map or malformed, the user gets an error response.
-func GetHomePage(tmpl map[string]*template.Template) func(w http.ResponseWriter, _ *http.Request) {
-	return func(w http.ResponseWriter, _ *http.Request) {
-		home, ok := tmpl["home"]
-		if !ok {
-			apperrors.HandleInternalError(w)
-			return
-		}
-
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.WriteHeader(http.StatusOK)
-		if err := home.Execute(w, nil); err != nil {
-			apperrors.HandleInternalError(w)
-		}
+func GetHomePage(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	if _, err := w.Write([]byte("The URL shortener is up and running.")); err != nil {
+		log.Error(err)
 	}
 }

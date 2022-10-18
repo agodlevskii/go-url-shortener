@@ -1,6 +1,7 @@
 package generators_test
 
 import (
+	"context"
 	"fmt"
 
 	"go-url-shortener/internal/generators"
@@ -25,7 +26,7 @@ func ExampleGenerateID() {
 	db := storage.NewMemoryRepo()
 
 	// Generate the ID represented by a string consisting of 7 symbols.
-	id, _ := generators.GenerateID(db, 7)
+	id, _ := generators.GenerateID(context.Background(), db, 7)
 	fmt.Println(len(id))
 
 	// Output:

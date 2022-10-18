@@ -1,8 +1,8 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
-	"os"
 	"testing"
 
 	"go-url-shortener/internal/apperrors"
@@ -46,10 +46,6 @@ func TestWebShortener(t *testing.T) {
 				contentType: "text/plain; charset=utf-8",
 			},
 		},
-	}
-
-	if err := os.Chdir("../../"); err != nil {
-		t.Fatal(err)
 	}
 
 	ts := getTestServer(nil)
@@ -109,10 +105,6 @@ func TestAPIShortener(t *testing.T) {
 		},
 	}
 
-	if err := os.Chdir("../../"); err != nil {
-		t.Fatal(err)
-	}
-
 	ts := getTestServer(nil)
 	defer ts.Close()
 
@@ -163,8 +155,8 @@ func TestWebGetFullURL(t *testing.T) {
 		},
 		{
 			name:   "Correct ID parameter value",
-			id:     "googl",
-			stored: []storage.ShortURL{{ID: "googl", URL: "https://google.com", UID: UserID}},
+			id:     "google",
+			stored: []storage.ShortURL{{ID: "google", URL: "https://google.com", UID: UserID}},
 			want: httpRes{
 				code:        http.StatusTemporaryRedirect,
 				resp:        `https://google.com`,
@@ -174,14 +166,10 @@ func TestWebGetFullURL(t *testing.T) {
 		},
 	}
 
-	if err := os.Chdir("../../"); err != nil {
-		t.Fatal(err)
-	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			db := storage.NewMemoryRepo()
-			if _, err := db.Add(tt.stored); err != nil {
+			if _, err := db.Add(context.Background(), tt.stored); err != nil {
 				t.Fatal(err)
 			}
 

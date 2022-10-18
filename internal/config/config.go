@@ -3,9 +3,6 @@ package config
 
 import (
 	"flag"
-	"html/template"
-	"os"
-	"path/filepath"
 	"sync"
 
 	"github.com/caarlos0/env"
@@ -19,7 +16,6 @@ type Config struct {
 	BaseURL        string `env:"BASE_URL" envDefault:"http://localhost:8080"`
 	DBURL          string `env:"DATABASE_DSN"`
 	Filename       string `env:"FILE_STORAGE_PATH"`
-	Templates      map[string]*template.Template
 	Pool           int
 	UserCookieName string
 }
@@ -41,12 +37,8 @@ func GetConfig() *Config {
 // If the template reading and the environment processing fails, the application will exit with error.
 func initConfig() {
 	cfg = &Config{
-		Templates:      make(map[string]*template.Template),
 		UserCookieName: "user_id",
 		Pool:           10,
-	}
-	if err := initTemplates(cfg); err != nil {
-		log.Fatal(err)
 	}
 
 	if err := initFromEnvVar(cfg); err != nil {
@@ -54,21 +46,6 @@ func initConfig() {
 	}
 
 	initFromFlags(cfg)
-}
-
-// initTemplates reads the HTML templates stored on the HDD.
-// If the template fails to be parsed, the error will be returned.
-func initTemplates(cfg *Config) error {
-	cwd, _ := os.Getwd()
-	path := filepath.Join(cwd, "templates/index.html")
-
-	tmpl, err := template.ParseFiles(path)
-	if err != nil {
-		return err
-	}
-
-	cfg.Templates["home"] = tmpl
-	return nil
 }
 
 // initFromEnvVar reads the configuration values from the environment variables.

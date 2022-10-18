@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -53,7 +54,7 @@ type BatchResData struct {
 // APIShortener handles the URL shortener request through API.
 // The handler validates the request body to be a non-empty string of the valid format.
 // It generates the shortened version and stores it in storage.ShortURL format.
-func APIShortener(db storage.Storager, baseURL string) func(w http.ResponseWriter, r *http.Request) {
+func APIShortener(db storage.Storager, baseURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req PostRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -73,7 +74,7 @@ func APIShortener(db storage.Storager, baseURL string) func(w http.ResponseWrite
 			return
 		}
 
-		shortURI, chg, err := shortenURL(db, userID, uri, baseURL)
+		shortURI, chg, err := shortenURL(r.Context(), db, userID, uri, baseURL)
 		if err != nil {
 			apperrors.HandleHTTPError(w, apperrors.EmptyError(), http.StatusInternalServerError)
 			return
@@ -96,7 +97,7 @@ func APIShortener(db storage.Storager, baseURL string) func(w http.ResponseWrite
 // WebShortener handles the URL shortener request.
 // The handler validates the request body to be a non-empty string of the valid format.
 // It generates the shortened version and stores it in storage.ShortURL format.
-func WebShortener(db storage.Storager, baseURL string) func(w http.ResponseWriter, r *http.Request) {
+func WebShortener(db storage.Storager, baseURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		b, err := io.ReadAll(r.Body)
 		if err != nil || len(b) == 0 {
@@ -116,7 +117,7 @@ func WebShortener(db storage.Storager, baseURL string) func(w http.ResponseWrite
 			return
 		}
 
-		res, chg, err := shortenURL(db, userID, uri, baseURL)
+		res, chg, err := shortenURL(r.Context(), db, userID, uri, baseURL)
 		if err != nil {
 			apperrors.HandleHTTPError(w, apperrors.EmptyError(), http.StatusInternalServerError)
 			return
@@ -138,7 +139,7 @@ func WebShortener(db storage.Storager, baseURL string) func(w http.ResponseWrite
 // APIBatchShortener handles the batch URL shortener request through API.
 // The handler validates the request body to match the BatchReqData format.
 // For each provided URL, the handler generates the shortened version and stores it in storage.ShortURL format.
-func APIBatchShortener(db storage.Storager, baseURL string) func(w http.ResponseWriter, r *http.Request) {
+func APIBatchShortener(db storage.Storager, baseURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := middlewares.GetUserID(r)
 		if err != nil {
@@ -152,13 +153,13 @@ func APIBatchShortener(db storage.Storager, baseURL string) func(w http.Response
 			return
 		}
 
-		batch, err := getBatch(db, req, userID)
+		batch, err := getBatch(r.Context(), db, req, userID)
 		if err != nil {
 			apperrors.HandleInternalError(w)
 			return
 		}
 
-		res, err := db.Add(batch)
+		res, err := db.Add(r.Context(), batch)
 		if err != nil {
 			apperrors.HandleInternalError(w)
 			return
@@ -175,11 +176,11 @@ func APIBatchShortener(db storage.Storager, baseURL string) func(w http.Response
 
 // WebGetFullURL handles the URL redirect request.
 // The handler checks if the provided shortened URL exists and not marked as deleted.
-// If the validation passes, the application redirects the user to the original URL's location.
-func WebGetFullURL(db storage.Storager) func(w http.ResponseWriter, r *http.Request) {
+// If the validation passes, the application redirects the user to the original URL location.
+func WebGetFullURL(db storage.Storager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := chi.URLParam(r, "id")
-		sURL, err := db.Get(id)
+		sURL, err := db.Get(r.Context(), id)
 		if err != nil {
 			apperrors.HandleHTTPError(w, apperrors.NewError("", err), http.StatusBadRequest)
 			return
@@ -197,17 +198,17 @@ func WebGetFullURL(db storage.Storager) func(w http.ResponseWriter, r *http.Requ
 // shortenURL provides the short version of the provided URL via the random string generation.
 // The original URL goes through the validation process to avoid the redirect-related issues in the future.
 // The generated shortened URL is being checked not to be associated with the existing DB entry.
-func shortenURL(db storage.Storager, userID, uri, baseURL string) (string, bool, error) {
+func shortenURL(ctx context.Context, db storage.Storager, userID, uri, baseURL string) (string, bool, error) {
 	if !validators.IsURLStringValid(uri) {
 		return "", false, errors.New(apperrors.URLFormat)
 	}
 
-	id, err := generators.GenerateID(db, 7)
+	id, err := generators.GenerateID(ctx, db, 7)
 	if err != nil {
 		return "", false, err
 	}
 
-	res, err := db.Add([]storage.ShortURL{
+	res, err := db.Add(ctx, []storage.ShortURL{
 		{
 			ID:  id,
 			URL: uri,
@@ -224,10 +225,10 @@ func shortenURL(db storage.Storager, userID, uri, baseURL string) (string, bool,
 
 // getBatch provides the short version of each URL provided in a batch request.
 // The function checks for the newly generated ID not to be associated with the existing DB entry.
-func getBatch(db storage.Storager, req []BatchReqData, userID string) ([]storage.ShortURL, error) {
+func getBatch(ctx context.Context, db storage.Storager, req []BatchReqData, userID string) ([]storage.ShortURL, error) {
 	batch := make([]storage.ShortURL, len(req))
 	for i, data := range req {
-		id, err := generators.GenerateID(db, 7)
+		id, err := generators.GenerateID(ctx, db, 7)
 		if err != nil {
 			return nil, err
 		}

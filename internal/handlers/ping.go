@@ -13,9 +13,9 @@ import (
 
 // Ping handles the DB status request.
 // If the ping fails, the user gets the error response.
-func Ping(db storage.Storager) func(w http.ResponseWriter, r *http.Request) {
+func Ping(db storage.Storager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if ping := db.Ping(); !ping {
+		if ping := db.Ping(r.Context()); !ping {
 			apperrors.HandleInternalError(w)
 			return
 		}

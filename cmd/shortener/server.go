@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -13,7 +14,7 @@ import (
 
 func main() {
 	cfg := config.GetConfig()
-	repo, err := getRepo(cfg)
+	repo, err := getRepo(context.Background(), cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -30,9 +31,9 @@ func main() {
 	}
 }
 
-func getRepo(cfg *config.Config) (storage.Storager, error) {
+func getRepo(ctx context.Context, cfg *config.Config) (storage.Storager, error) {
 	if cfg.DBURL != "" {
-		return storage.NewDBRepo(cfg.DBURL)
+		return storage.NewDBRepo(ctx, cfg.DBURL)
 	}
 	if cfg.Filename != "" {
 		return storage.NewFileRepo(cfg.Filename)

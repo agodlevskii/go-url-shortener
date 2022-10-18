@@ -1,8 +1,8 @@
 package handlers
 
 import (
+	"io"
 	"net/http"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,17 +14,13 @@ func TestGetHomePage(t *testing.T) {
 		want httpRes
 	}{
 		{
-			name: "Homepage template",
+			name: "Homepage message",
 			want: httpRes{
 				code:        http.StatusOK,
-				resp:        "<title>Go URL Shortener</title>",
+				resp:        "The URL shortener is up and running.",
 				contentType: "text/html; charset=utf-8",
 			},
 		},
-	}
-
-	if err := os.Chdir("../../"); err != nil {
-		t.Fatal(err)
 	}
 
 	ts := getTestServer(nil)
@@ -33,11 +29,16 @@ func TestGetHomePage(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resp, body := testRequest(t, ts, http.MethodGet, "/", "")
-			defer resp.Body.Close()
+			defer func(Body io.ReadCloser) {
+				err := Body.Close()
+				if err != nil {
+					t.Fatal(err)
+				}
+			}(resp.Body)
 
 			assert.Equal(t, tt.want.code, resp.StatusCode)
 			assert.Equal(t, tt.want.contentType, resp.Header.Get("Content-Type"))
-			assert.Contains(t, body, tt.want.resp)
+			assert.Equal(t, body, tt.want.resp)
 		})
 	}
 }

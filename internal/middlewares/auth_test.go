@@ -3,7 +3,6 @@ package middlewares
 import (
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	"go-url-shortener/internal/encryptors"
@@ -19,10 +18,6 @@ const (
 )
 
 func TestAuthorize(t *testing.T) {
-	if err := os.Chdir("../../"); err != nil {
-		t.Fatal(err)
-	}
-
 	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie(UserCookieName)
 		if err != nil {
@@ -58,10 +53,6 @@ func TestGetUserID(t *testing.T) {
 			name:    "Missing",
 			wantErr: true,
 		},
-	}
-
-	if err := os.Chdir("../../"); err != nil {
-		t.Fatal(err)
 	}
 
 	for _, tt := range tests {

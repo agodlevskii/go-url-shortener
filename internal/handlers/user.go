@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
@@ -14,7 +15,7 @@ import (
 // GetUserLinks returns the list of the user-associated links.
 // The user is being identified based on a request cookie.
 // The response includes full information on the stored link, including the deletion flag.
-func GetUserLinks(db storage.Storager, baseURL string) func(http.ResponseWriter, *http.Request) {
+func GetUserLinks(db storage.Storager, baseURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := middlewares.GetUserID(r)
 		if err != nil {
@@ -22,7 +23,7 @@ func GetUserLinks(db storage.Storager, baseURL string) func(http.ResponseWriter,
 			return
 		}
 
-		list := getLinks(db, userID, baseURL)
+		list := getLinks(r.Context(), db, userID, baseURL)
 		if len(list) == 0 {
 			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			w.WriteHeader(http.StatusNoContent)
@@ -44,7 +45,7 @@ func GetUserLinks(db storage.Storager, baseURL string) func(http.ResponseWriter,
 // The user is being identified based on a request cookie.
 // The links must be passed as an array of strings in the request body.
 // The handler doesn't remove the links, but validates the request and marks the passed entities for deletion.
-func DeleteUserLinks(db storage.Storager, poolSize int) func(w http.ResponseWriter, r *http.Request) {
+func DeleteUserLinks(db storage.Storager, poolSize int) http.HandlerFunc {
 	pool := make(chan func(), poolSize)
 	for i := 0; i < poolSize; i++ {
 		go func() {
@@ -69,7 +70,7 @@ func DeleteUserLinks(db storage.Storager, poolSize int) func(w http.ResponseWrit
 
 		go func() {
 			pool <- func() {
-				deleteLinks(db, userID, ids)
+				deleteLinks(r.Context(), db, userID, ids)
 			}
 		}()
 
@@ -79,8 +80,8 @@ func DeleteUserLinks(db storage.Storager, poolSize int) func(w http.ResponseWrit
 
 // getLinks recovers the user-associated links from the repository.
 // In case if there are no links to return, the function returns nil instead of the empty slice.
-func getLinks(db storage.Storager, userID, baseURL string) []UserLink {
-	urls, err := db.GetAll(userID)
+func getLinks(ctx context.Context, db storage.Storager, userID, baseURL string) []UserLink {
+	urls, err := db.GetAll(ctx, userID)
 	if err != nil {
 		log.Error(err)
 		return nil
@@ -103,7 +104,7 @@ func getLinks(db storage.Storager, userID, baseURL string) []UserLink {
 
 // getLinks deletes the user-associated links from the repository.
 // The listed entities remain in the repository, but each of them gets their deletion flag set to true.
-func deleteLinks(db storage.Storager, userID string, ids []string) {
+func deleteLinks(ctx context.Context, db storage.Storager, userID string, ids []string) {
 	batch := make([]storage.ShortURL, len(ids))
 	for i, v := range ids {
 		batch[i] = storage.ShortURL{
@@ -112,7 +113,7 @@ func deleteLinks(db storage.Storager, userID string, ids []string) {
 		}
 	}
 
-	if err := db.Delete(batch); err != nil {
+	if err := db.Delete(ctx, batch); err != nil {
 		log.Error(err)
 	}
 }

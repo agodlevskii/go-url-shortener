@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"database/sql"
 	"regexp"
 	"testing"
@@ -23,7 +24,7 @@ func TestDBRepo_Add(t *testing.T) {
 			r := DBRepo{db: db}
 			coverInitExpect(mock, tt.state)
 			mock.ExpectClose()
-			got, err := r.Add(tt.state)
+			got, err := r.Add(context.Background(), tt.state)
 			assert.Equal(t, tt.wantErr, err != nil)
 			assert.Equal(t, tt.want.id, got[0].ID)
 		})
@@ -54,10 +55,10 @@ func TestDBRepo_Clear(t *testing.T) {
 				WillReturnResult(sqlmock.NewResult(1, 1))
 			mock.ExpectClose()
 
-			if _, err := r.Add(tt.state); err != nil {
+			if _, err := r.Add(context.Background(), tt.state); err != nil {
 				t.Fatal(err)
 			}
-			r.Clear()
+			r.Clear(context.Background())
 		})
 	}
 }
@@ -84,11 +85,11 @@ func TestDBRepo_Delete(t *testing.T) {
 				WillReturnResult(sqlmock.NewResult(1, 1))
 			mock.ExpectClose()
 
-			if _, err := r.Add(tt.state); err != nil {
+			if _, err := r.Add(context.Background(), tt.state); err != nil {
 				t.Fatal(err)
 			}
 
-			err := r.Delete(tt.state)
+			err := r.Delete(context.Background(), tt.state)
 			assert.Equal(t, tt.wantErr, err != nil)
 		})
 	}
@@ -123,10 +124,10 @@ func TestDBRepo_Get(t *testing.T) {
 			}
 			mock.ExpectClose()
 
-			if _, err := r.Add(tt.state); err != nil {
+			if _, err := r.Add(context.Background(), tt.state); err != nil {
 				t.Fatal(err)
 			}
-			got, err := r.Get(tt.id)
+			got, err := r.Get(context.Background(), tt.id)
 			assert.Equal(t, tt.wantErr, err != nil)
 			assert.Equal(t, tt.want, got.URL)
 		})
@@ -160,10 +161,10 @@ func TestDBRepo_GetAll(t *testing.T) {
 			mock.ExpectQuery(regexp.QuoteMeta(GetUserURLs)).WithArgs(UserID).WillReturnRows(rows)
 			mock.ExpectClose()
 
-			if _, err := r.Add(tt.state); err != nil {
+			if _, err := r.Add(context.Background(), tt.state); err != nil {
 				t.Fatal(err)
 			}
-			got, err := r.GetAll(UserID)
+			got, err := r.GetAll(context.Background(), UserID)
 			gotMap := make(map[string]bool)
 			for _, gv := range got {
 				gotMap[gv.ID] = true
@@ -201,10 +202,10 @@ func TestDBRepo_Has(t *testing.T) {
 				WillReturnRows(sqlmock.NewRows([]string{"cnt"}).AddRow(exp))
 			mock.ExpectClose()
 
-			if _, err := r.Add(tt.state); err != nil {
+			if _, err := r.Add(context.Background(), tt.state); err != nil {
 				t.Fatal(err)
 			}
-			got, err := r.Has(tt.id)
+			got, err := r.Has(context.Background(), tt.id)
 			assert.Equal(t, tt.wantErr, err != nil)
 			assert.Equal(t, tt.want, got)
 		})
