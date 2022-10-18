@@ -70,7 +70,7 @@ func DeleteUserLinks(db storage.Storager, poolSize int) http.HandlerFunc {
 
 		go func() {
 			pool <- func() {
-				deleteLinks(r.Context(), db, userID, ids)
+				deleteLinks(db, userID, ids)
 			}
 		}()
 
@@ -104,16 +104,16 @@ func getLinks(ctx context.Context, db storage.Storager, userID, baseURL string) 
 
 // getLinks deletes the user-associated links from the repository.
 // The listed entities remain in the repository, but each of them gets their deletion flag set to true.
-func deleteLinks(ctx context.Context, db storage.Storager, userID string, ids []string) {
-	batch := make([]storage.ShortURL, len(ids))
-	for i, v := range ids {
-		batch[i] = storage.ShortURL{
+func deleteLinks(db storage.Storager, userID string, ids []string) {
+	batch := make([]storage.ShortURL, 0, len(ids))
+	for _, v := range ids {
+		batch = append(batch, storage.ShortURL{
 			ID:  v,
 			UID: userID,
-		}
+		})
 	}
 
-	if err := db.Delete(ctx, batch); err != nil {
+	if err := db.Delete(context.Background(), batch); err != nil {
 		log.Error(err)
 	}
 }

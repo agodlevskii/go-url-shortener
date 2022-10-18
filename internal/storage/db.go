@@ -168,9 +168,9 @@ func (repo DBRepo) Delete(ctx context.Context, batch []ShortURL) error {
 	}
 
 	userID := batch[0].UID
-	ids := make([]string, len(batch))
-	for i, sURL := range batch {
-		ids[i] = sURL.ID
+	ids := make([]string, 0, len(batch))
+	for _, sURL := range batch {
+		ids = append(ids, sURL.ID)
 	}
 
 	_, err := repo.db.ExecContext(ctx, DeleteUserURLs, userID, pq.Array(ids))
