@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"io"
 	"net/http"
 	"testing"
 
@@ -53,15 +52,13 @@ func TestGetUserLinks(t *testing.T) {
 			defer ts.Close()
 
 			resp, body := testRequest(t, ts, http.MethodGet, route, "")
-			defer func(Body io.ReadCloser) {
-				if cErr := Body.Close(); cErr != nil {
-					t.Fatal(cErr)
-				}
-			}(resp.Body)
-
 			assert.Equal(t, tt.want.code, resp.StatusCode)
 			assert.Equal(t, tt.want.contentType, resp.Header.Get("Content-Type"))
 			assert.Equal(t, tt.want.resp, body)
+
+			if err := resp.Body.Close(); err != nil {
+				t.Fatal(err)
+			}
 		})
 	}
 }
@@ -103,15 +100,13 @@ func TestDeleteUserLinks(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resp, body := testRequest(t, ts, http.MethodDelete, route, tt.data)
-			defer func(Body io.ReadCloser) {
-				if err := Body.Close(); err != nil {
-					t.Fatal(err)
-				}
-			}(resp.Body)
-
 			assert.Equal(t, tt.want.code, resp.StatusCode)
 			assert.Equal(t, tt.want.contentType, resp.Header.Get("Content-Type"))
 			assert.Equal(t, tt.want.resp, body)
+
+			if err := resp.Body.Close(); err != nil {
+				t.Fatal(err)
+			}
 		})
 	}
 }

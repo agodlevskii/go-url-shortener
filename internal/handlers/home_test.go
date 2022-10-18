@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"io"
 	"net/http"
 	"testing"
 
@@ -29,16 +28,13 @@ func TestGetHomePage(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resp, body := testRequest(t, ts, http.MethodGet, "/", "")
-			defer func(Body io.ReadCloser) {
-				err := Body.Close()
-				if err != nil {
-					t.Fatal(err)
-				}
-			}(resp.Body)
-
 			assert.Equal(t, tt.want.code, resp.StatusCode)
 			assert.Equal(t, tt.want.contentType, resp.Header.Get("Content-Type"))
 			assert.Equal(t, body, tt.want.resp)
+
+			if err := resp.Body.Close(); err != nil {
+				t.Fatal(err)
+			}
 		})
 	}
 }
