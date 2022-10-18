@@ -129,7 +129,7 @@ func WebShortener(db storage.Storager, baseURL string) http.HandlerFunc {
 		} else {
 			w.WriteHeader(http.StatusCreated)
 		}
-		w.WriteHeader(http.StatusCreated)
+
 		if _, err = w.Write([]byte(res)); err != nil {
 			log.Error(err)
 		}
