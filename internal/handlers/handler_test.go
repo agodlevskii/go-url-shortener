@@ -25,6 +25,20 @@ type httpRes struct {
 	location    string
 }
 
+type mockConfig struct{}
+
+func (m mockConfig) GetBaseURL() string {
+	return BaseURL
+}
+
+func (m mockConfig) GetPoolSize() int {
+	return 10
+}
+
+func (m mockConfig) GetUserCookieName() string {
+	return UserCookieName
+}
+
 const (
 	BaseURL        = "http://localhost:8080"
 	UserIDEnc      = "4b529d6712a1d59f62a87dc4fa54f332"
@@ -91,6 +105,6 @@ func getTestServer(repo storage.Storager) *httptest.Server {
 	if repo == nil {
 		repo = storage.NewMemoryRepo()
 	}
-	r := NewShortenerRouter(repo)
+	r := NewShortenerRouter(mockConfig{}, repo)
 	return httptest.NewServer(r)
 }

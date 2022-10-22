@@ -50,3 +50,23 @@ func TestWithEnv(t *testing.T) {
 		})
 	}
 }
+
+func TestWithFlags(t *testing.T) {
+	tests := []struct {
+		name string
+		want *Config
+	}{
+		{
+			name: "Default config",
+			want: &Config{PoolSize: 10},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := New(WithFlags())
+			assert.Equal(t, tt.want.Addr, got.Addr)
+			assert.Equal(t, tt.want.BaseURL, got.BaseURL)
+			assert.Equal(t, tt.want.PoolSize, got.PoolSize)
+		})
+	}
+}

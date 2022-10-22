@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"go-url-shortener/internal/apperrors"
-	"go-url-shortener/internal/config"
 	"go-url-shortener/internal/middlewares"
 	"go-url-shortener/internal/storage"
 
@@ -22,7 +21,7 @@ type APIConfig interface {
 // NewShortenerRouter creates a new application router with the required middleware attached.
 // For the unmatched route, the handler returns Method Not Allowed response.
 // The data required for the handlers' functionality is being passed to the handler or gets collected from the config.
-func NewShortenerRouter(cfg *config.Config, db storage.Storager) *chi.Mux {
+func NewShortenerRouter(cfg APIConfig, db storage.Storager) *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middlewares.Authorize(cfg), middlewares.Compress, middlewares.Decompress)
 	r.Mount("/debug", middleware.Profiler())

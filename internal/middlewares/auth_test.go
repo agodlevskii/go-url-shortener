@@ -10,6 +10,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type mockConfig struct{}
+
+func (m mockConfig) GetUserCookieName() string {
+	return UserCookieName
+}
+
 const (
 	BaseURL        = "http://localhost:8080"
 	UserIDEnc      = "4b529d6712a1d59f62a87dc4fa54f332"
@@ -33,7 +39,7 @@ func TestAuthorize(t *testing.T) {
 	})
 
 	req := httptest.NewRequest(http.MethodGet, BaseURL, nil)
-	handler := Authorize(next)
+	handler := Authorize(mockConfig{})(next)
 	handler.ServeHTTP(httptest.NewRecorder(), req)
 }
 
@@ -72,7 +78,7 @@ func TestGetUserID(t *testing.T) {
 				return
 			}
 
-			got, err := GetUserID(do.Request)
+			got, err := GetUserID(mockConfig{}, do.Request)
 			assert.Equal(t, tt.want, got)
 			assert.Equal(t, tt.wantErr, err != nil)
 
