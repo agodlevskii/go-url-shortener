@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	cfg := config.GetConfig()
+	cfg := config.New(config.WithEnv(), config.WithFlags())
 	repo, err := getRepo(context.Background(), cfg)
 	if err != nil {
 		log.Fatal(err)
@@ -25,7 +25,7 @@ func main() {
 		}
 	}(repo)
 
-	r := handlers.NewShortenerRouter(repo)
+	r := handlers.NewShortenerRouter(cfg, repo)
 	if err = getServer(cfg.Addr, r).ListenAndServe(); err != nil {
 		log.Error(err)
 	}

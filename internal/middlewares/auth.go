@@ -3,56 +3,57 @@ package middlewares
 
 import (
 	"crypto/aes"
-	"net/http"
-	"regexp"
-
-	"go-url-shortener/internal/apperrors"
-	"go-url-shortener/internal/config"
-	"go-url-shortener/internal/encryptors"
-
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
+	"go-url-shortener/internal/apperrors"
+	"go-url-shortener/internal/encryptors"
+	"net/http"
+	"regexp"
 )
+
+type AuthConfig interface {
+	GetUserCookieName() string
+}
 
 // Authorize provides a cookie-based user authorization.
 // If the cookie is present and valid, Authorize passes the execution to the next handler.
 // If the cookie is missing or invalid, Authorize creates a new cookie and adds it to the request.
-func Authorize(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cfg := config.GetConfig()
-		cookie, err := r.Cookie(cfg.UserCookieName)
+func Authorize(cfg AuthConfig) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			cookie, err := r.Cookie(cfg.GetUserCookieName())
 
-		if err == nil {
-			valid, vErr := validateID(cookie.Value)
-			if vErr != nil {
+			if err == nil {
+				valid, vErr := validateID(cookie.Value)
+				if vErr != nil {
+					apperrors.HandleHTTPError(w, apperrors.NewError("", err), http.StatusInternalServerError)
+					return
+				}
+
+				if valid {
+					next.ServeHTTP(w, r)
+					return
+				}
+			}
+
+			newID, err := generateID()
+			if err != nil {
 				apperrors.HandleHTTPError(w, apperrors.NewError("", err), http.StatusInternalServerError)
 				return
 			}
 
-			if valid {
-				next.ServeHTTP(w, r)
-				return
-			}
-		}
-
-		newID, err := generateID()
-		if err != nil {
-			apperrors.HandleHTTPError(w, apperrors.NewError("", err), http.StatusInternalServerError)
-			return
-		}
-
-		cookie = &http.Cookie{Name: cfg.UserCookieName, Value: newID, Path: "/"}
-		http.SetCookie(w, cookie)
-		r.AddCookie(cookie)
-		next.ServeHTTP(w, r)
-	})
+			cookie = &http.Cookie{Name: cfg.GetUserCookieName(), Value: newID, Path: "/"}
+			http.SetCookie(w, cookie)
+			r.AddCookie(cookie)
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
 // GetUserID parses the request's user-related cookie and decrypts its value via encryptors.AESDecrypt functionality.
 // If the cookie is missing, or its value fails to be decrypted, the error will be returned.
-func GetUserID(r *http.Request) (string, error) {
-	cfg := config.GetConfig()
-	cookie, err := r.Cookie(cfg.UserCookieName)
+func GetUserID(cfg AuthConfig, r *http.Request) (string, error) {
+	cookie, err := r.Cookie(cfg.GetUserCookieName())
 	if err != nil {
 		return "", err
 	}

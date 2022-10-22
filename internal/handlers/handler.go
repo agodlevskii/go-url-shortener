@@ -13,31 +13,36 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
+type APIConfig interface {
+	GetBaseURL() string
+	GetPoolSize() int
+	GetUserCookieName() string
+}
+
 // NewShortenerRouter creates a new application router with the required middleware attached.
 // For the unmatched route, the handler returns Method Not Allowed response.
 // The data required for the handlers' functionality is being passed to the handler or gets collected from the config.
-func NewShortenerRouter(db storage.Storager) *chi.Mux {
+func NewShortenerRouter(cfg *config.Config, db storage.Storager) *chi.Mux {
 	r := chi.NewRouter()
-	r.Use(middlewares.Authorize, middlewares.Compress, middlewares.Decompress)
+	r.Use(middlewares.Authorize(cfg), middlewares.Compress, middlewares.Decompress)
 	r.Mount("/debug", middleware.Profiler())
-	cfg := config.GetConfig()
 
 	r.Route("/", func(r chi.Router) {
 		r.Get("/", GetHomePage)
-		r.Post("/", WebShortener(db, cfg.BaseURL))
+		r.Post("/", WebShortener(db, cfg))
 		r.Get("/{id}", WebGetFullURL(db))
 		r.Get("/ping", Ping(db))
 
 		r.Route("/api", func(r chi.Router) {
 			r.Route("/shorten", func(r chi.Router) {
-				r.Post("/", APIShortener(db, cfg.BaseURL))
-				r.Post("/batch", APIBatchShortener(db, cfg.BaseURL))
+				r.Post("/", APIShortener(db, cfg))
+				r.Post("/batch", APIBatchShortener(db, cfg))
 			})
 
 			r.Route("/user", func(r chi.Router) {
 				r.Route("/urls", func(r chi.Router) {
-					r.Get("/", GetUserLinks(db, cfg.BaseURL))
-					r.Delete("/", DeleteUserLinks(db, cfg.Pool))
+					r.Get("/", GetUserLinks(db, cfg))
+					r.Delete("/", DeleteUserLinks(db, cfg))
 				})
 			})
 		})

@@ -15,15 +15,15 @@ import (
 // GetUserLinks returns the list of the user-associated links.
 // The user is being identified based on a request cookie.
 // The response includes full information on the stored link, including the deletion flag.
-func GetUserLinks(db storage.Storager, baseURL string) http.HandlerFunc {
+func GetUserLinks(db storage.Storager, cfg APIConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, err := middlewares.GetUserID(r)
+		userID, err := middlewares.GetUserID(cfg, r)
 		if err != nil {
 			apperrors.HandleUserError(w)
 			return
 		}
 
-		list := getLinks(r.Context(), db, userID, baseURL)
+		list := getLinks(r.Context(), db, userID, cfg.GetBaseURL())
 		if len(list) == 0 {
 			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			w.WriteHeader(http.StatusNoContent)
@@ -45,9 +45,10 @@ func GetUserLinks(db storage.Storager, baseURL string) http.HandlerFunc {
 // The user is being identified based on a request cookie.
 // The links must be passed as an array of strings in the request body.
 // The handler doesn't remove the links, but validates the request and marks the passed entities for deletion.
-func DeleteUserLinks(db storage.Storager, poolSize int) http.HandlerFunc {
-	pool := make(chan func(), poolSize)
-	for i := 0; i < poolSize; i++ {
+func DeleteUserLinks(db storage.Storager, cfg APIConfig) http.HandlerFunc {
+	ps := cfg.GetPoolSize()
+	pool := make(chan func(), ps)
+	for i := 0; i < ps; i++ {
 		go func() {
 			for f := range pool {
 				f()
@@ -56,7 +57,7 @@ func DeleteUserLinks(db storage.Storager, poolSize int) http.HandlerFunc {
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, err := middlewares.GetUserID(r)
+		userID, err := middlewares.GetUserID(cfg, r)
 		if err != nil {
 			apperrors.HandleUserError(w)
 			return

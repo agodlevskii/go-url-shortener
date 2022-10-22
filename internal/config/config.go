@@ -3,8 +3,6 @@ package config
 
 import (
 	"flag"
-	"sync"
-
 	"github.com/caarlos0/env"
 	log "github.com/sirupsen/logrus"
 )
@@ -16,49 +14,61 @@ type Config struct {
 	BaseURL        string `env:"BASE_URL" envDefault:"http://localhost:8080"`
 	DBURL          string `env:"DATABASE_DSN"`
 	Filename       string `env:"FILE_STORAGE_PATH"`
-	Pool           int
+	PoolSize       int
 	UserCookieName string
 }
 
-var (
-	cfg  *Config
-	once sync.Once
-)
+func New(opts ...func(*Config)) *Config {
+	cfg := &Config{
+		UserCookieName: "user_id",
+		PoolSize:       10,
+	}
 
-// GetConfig returns the application configuration.
-// The application uses a single instance of the config, so the configuration gets initiated only once.
-func GetConfig() *Config {
-	once.Do(initConfig)
+	for _, o := range opts {
+		o(cfg)
+	}
+
 	return cfg
 }
 
-// initConfig provides the initial configuration of the application.
-// The initialization includes reading the templates from HDD, and processing environment variables and CLI flags.
-// If the template reading and the environment processing fails, the application will exit with error.
-func initConfig() {
-	cfg = &Config{
-		UserCookieName: "user_id",
-		Pool:           10,
+func WithEnv() func(*Config) {
+	return func(cfg *Config) {
+		if err := env.Parse(cfg); err != nil {
+			log.Fatal(err)
+		}
 	}
-
-	if err := initFromEnvVar(cfg); err != nil {
-		log.Fatal(err)
-	}
-
-	initFromFlags(cfg)
 }
 
-// initFromEnvVar reads the configuration values from the environment variables.
-// If the template fails to be parsed, the error will be returned.
-func initFromEnvVar(cfg *Config) error {
-	return env.Parse(cfg)
+func WithFlags() func(*Config) {
+	return func(cfg *Config) {
+		flag.StringVar(&cfg.Addr, "a", cfg.Addr, "The application server address")
+		flag.StringVar(&cfg.BaseURL, "b", cfg.BaseURL, "The application server port")
+		flag.StringVar(&cfg.DBURL, "d", cfg.DBURL, "The DB connection URL")
+		flag.StringVar(&cfg.Filename, "f", cfg.Filename, "The file storage name")
+		flag.Parse()
+	}
 }
 
-// initFromFlags reads the configuration values from the environment variables.
-func initFromFlags(cfg *Config) {
-	flag.StringVar(&cfg.Addr, "a", cfg.Addr, "The application server address")
-	flag.StringVar(&cfg.BaseURL, "b", cfg.BaseURL, "The application server port")
-	flag.StringVar(&cfg.DBURL, "d", cfg.DBURL, "The DB connection URL")
-	flag.StringVar(&cfg.Filename, "f", cfg.Filename, "The file storage name")
-	flag.Parse()
+func (c *Config) GetBaseURL() string {
+	return c.BaseURL
+}
+
+func (c *Config) GetDBURL() string {
+	return c.DBURL
+}
+
+func (c *Config) GetPoolSize() int {
+	return c.PoolSize
+}
+
+func (c *Config) GetServerAddr() string {
+	return c.Addr
+}
+
+func (c *Config) GetStorageFileName() string {
+	return c.Filename
+}
+
+func (c *Config) GetUserCookieName() string {
+	return c.UserCookieName
 }
