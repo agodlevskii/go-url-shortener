@@ -2,13 +2,19 @@ package middlewares
 
 import (
 	"compress/gzip"
-	"go-url-shortener/internal/apperrors"
-	"go-url-shortener/internal/respwriters"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"go-url-shortener/internal/apperrors"
+	"go-url-shortener/internal/respwriters"
+
+	log "github.com/sirupsen/logrus"
 )
 
+// Compress provides a gzip-based encryption for the response.
+// If request has valid headers, Compress replaces default http.ResponseWriter with the custom respwriters.GzipWriter.
+// Otherwise, the default writer stays in charge.
 func Compress(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		enc := r.Header.Get("Accept-Encoding")
@@ -28,7 +34,11 @@ func Compress(next http.Handler) http.Handler {
 			apperrors.HandleHTTPError(w, apperrors.NewError("", err), http.StatusInternalServerError)
 			return
 		}
-		defer gz.Close()
+		defer func(gz *gzip.Writer) {
+			if cErr := gz.Close(); cErr != nil {
+				log.Error(cErr)
+			}
+		}(gz)
 
 		gzWriter := respwriters.GzipWriter{
 			ResponseWriter: w,
@@ -40,6 +50,9 @@ func Compress(next http.Handler) http.Handler {
 	})
 }
 
+// Decompress decrypts gzipped request.
+// If request has valid header, Decompress replaces default body reader with a gzip reader.
+// Otherwise, the default body reader stays in charge.
 func Decompress(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Content-Encoding") != "gzip" {
@@ -52,7 +65,11 @@ func Decompress(next http.Handler) http.Handler {
 			apperrors.HandleHTTPError(w, apperrors.NewError("", err), http.StatusInternalServerError)
 			return
 		}
-		defer gz.Close()
+		defer func(gz *gzip.Reader) {
+			if cErr := gz.Close(); cErr != nil {
+				log.Error(cErr)
+			}
+		}(gz)
 		r.Body = gz
 
 		next.ServeHTTP(w, r)

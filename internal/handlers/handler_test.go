@@ -3,10 +3,6 @@ package handlers
 import (
 	"bytes"
 	"errors"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"go-url-shortener/configs"
-	"go-url-shortener/internal/storage"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -14,10 +10,54 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+
+	"go-url-shortener/internal/storage"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/stretchr/testify/require"
 )
 
-var UserIDEnc = "4b529d6712a1d59f62a87dc4fa54f332"
-var UserID = "7190e4d4-fd9c-4b"
+type httpRes struct {
+	code        int
+	resp        string
+	contentType string
+	location    string
+}
+
+type mockConfig struct{}
+
+func (m mockConfig) GetBaseURL() string {
+	return BaseURL
+}
+
+func (m mockConfig) GetPoolSize() int {
+	return 10
+}
+
+func (m mockConfig) GetUserCookieName() string {
+	return UserCookieName
+}
+
+const (
+	BaseURL        = "http://localhost:8080"
+	UserIDEnc      = "4b529d6712a1d59f62a87dc4fa54f332"
+	UserID         = "7190e4d4-fd9c-4b"
+	UserCookieName = "user_id"
+)
+
+func TestNewShortenerRouter(t *testing.T) {
+	ts := getTestServer(nil)
+	defer ts.Close()
+
+	resp, _ := testRequest(t, ts, http.MethodPut, "/", "")
+	assert.Error(t, errors.New(http.StatusText(http.StatusMethodNotAllowed)))
+	assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
+
+	if err := resp.Body.Close(); err != nil {
+		t.Fatal(err)
+	}
+}
 
 func testRequest(t *testing.T, ts *httptest.Server, method, path, data string) (*http.Response, string) {
 	rawURL := ts.URL + path
@@ -28,7 +68,7 @@ func testRequest(t *testing.T, ts *httptest.Server, method, path, data string) (
 	}
 
 	jar.SetCookies(purl, []*http.Cookie{
-		{Name: configs.UserCookieName, Value: UserIDEnc, Path: "/"},
+		{Name: UserCookieName, Value: UserIDEnc, Path: "/"},
 	})
 
 	client := &http.Client{
@@ -53,31 +93,18 @@ func testRequest(t *testing.T, ts *httptest.Server, method, path, data string) (
 	require.NoError(t, err)
 
 	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			t.Error(err)
+		if cErr := Body.Close(); cErr != nil {
+			t.Error(cErr)
 		}
 	}(resp.Body)
 
 	return resp, strings.TrimSpace(string(respBody))
 }
 
-func testGetRequest(t *testing.T, ts *httptest.Server, path string) (*http.Response, string) {
-	return testRequest(t, ts, http.MethodGet, path, "")
-}
-
-func testPostRequest(t *testing.T, ts *httptest.Server, path, data string) (*http.Response, string) {
-	return testRequest(t, ts, http.MethodPost, path, data)
-}
-
-func TestNewShortenerRouter(t *testing.T) {
-	r := NewShortenerRouter(storage.NewMemoryRepo(), "https://test.url", 10)
-	ts := httptest.NewServer(r)
-	defer ts.Close()
-
-	resp, _ := testRequest(t, ts, http.MethodPut, "/", "")
-	assert.Error(t, errors.New(http.StatusText(http.StatusMethodNotAllowed)))
-	assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
-
-	defer resp.Body.Close()
+func getTestServer(repo storage.Storager) *httptest.Server {
+	if repo == nil {
+		repo = storage.NewMemoryRepo()
+	}
+	r := NewShortenerRouter(mockConfig{}, repo)
+	return httptest.NewServer(r)
 }

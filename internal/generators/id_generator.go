@@ -1,12 +1,19 @@
+// Package generators provides the algorithms for the randomly generated values.
 package generators
 
 import (
+	"context"
 	"errors"
+
 	"go-url-shortener/internal/apperrors"
 	"go-url-shortener/internal/storage"
 )
 
-func GenerateID(db storage.Storager, size int) (string, error) {
+// GenerateID provides a randomly generated ID of the required size.
+// The generation algorithm is covered by the GenerateString function.
+// The generated ID must be unique for the current DB, presented by the storage.Storager interface.
+// The function will return an error if the size is zero.
+func GenerateID(ctx context.Context, db storage.Storager, size int) (string, error) {
 	if size == 0 {
 		return "", errors.New(apperrors.IDSize)
 	}
@@ -17,7 +24,7 @@ func GenerateID(db storage.Storager, size int) (string, error) {
 			return "", err
 		}
 
-		has, err := db.Has(id)
+		has, err := db.Has(ctx, id)
 		if err != nil {
 			return "", err
 		}
