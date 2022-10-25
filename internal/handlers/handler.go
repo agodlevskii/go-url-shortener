@@ -4,12 +4,12 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+
 	"go-url-shortener/internal/apperrors"
 	"go-url-shortener/internal/middlewares"
 	"go-url-shortener/internal/storage"
-
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 )
 
 type APIConfig interface {

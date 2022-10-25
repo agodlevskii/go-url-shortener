@@ -7,10 +7,10 @@ import (
 	"os"
 	"path"
 
-	"go-url-shortener/internal/apperrors"
-
 	"github.com/kr/pretty"
 	log "github.com/sirupsen/logrus"
+
+	"go-url-shortener/internal/apperrors"
 )
 
 // FileRepo describes the file-based implementation of the Storager interface.

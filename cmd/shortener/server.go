@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"time"
 
+	log "github.com/sirupsen/logrus"
+
 	"go-url-shortener/internal/config"
 	"go-url-shortener/internal/handlers"
 	"go-url-shortener/internal/storage"
-
-	log "github.com/sirupsen/logrus"
 )
 
 func main() {

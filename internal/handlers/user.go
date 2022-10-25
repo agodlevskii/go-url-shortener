@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"net/http"
 
+	log "github.com/sirupsen/logrus"
+
 	"go-url-shortener/internal/apperrors"
 	"go-url-shortener/internal/middlewares"
 	"go-url-shortener/internal/storage"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // GetUserLinks returns the list of the user-associated links.

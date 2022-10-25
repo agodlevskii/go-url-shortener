@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"testing"
 
-	"go-url-shortener/internal/storage"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+
+	"go-url-shortener/internal/storage"
 )
 
 type mockDB struct {

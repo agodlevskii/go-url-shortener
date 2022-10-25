@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"go-url-shortener/internal/storage"
-
 	"github.com/stretchr/testify/assert"
+
+	"go-url-shortener/internal/storage"
 )
 
 func TestGenerateID(t *testing.T) {

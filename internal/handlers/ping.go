@@ -3,12 +3,11 @@ package handlers
 import (
 	"net/http"
 
-	"go-url-shortener/internal/apperrors"
-	"go-url-shortener/internal/storage"
-
+	_ "github.com/jackc/pgx/v4" // SQL driver
 	log "github.com/sirupsen/logrus"
 
-	_ "github.com/jackc/pgx/v4" // SQL driver
+	"go-url-shortener/internal/apperrors"
+	"go-url-shortener/internal/storage"
 )
 
 // Ping handles the DB status request.

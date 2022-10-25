@@ -7,15 +7,14 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
+	log "github.com/sirupsen/logrus"
+
 	"go-url-shortener/internal/apperrors"
 	"go-url-shortener/internal/generators"
 	"go-url-shortener/internal/middlewares"
 	"go-url-shortener/internal/storage"
 	"go-url-shortener/internal/validators"
-
-	"github.com/go-chi/chi/v5"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // PostRequest describes the body for a single URL shorten request coming from API.

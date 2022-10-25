@@ -6,10 +6,10 @@ import (
 	"strconv"
 	"strings"
 
+	log "github.com/sirupsen/logrus"
+
 	"go-url-shortener/internal/apperrors"
 	"go-url-shortener/internal/respwriters"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // Compress provides a gzip-based encryption for the response.

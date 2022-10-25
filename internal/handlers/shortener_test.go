@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"go-url-shortener/internal/apperrors"
 	"go-url-shortener/internal/storage"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestWebShortener(t *testing.T) {

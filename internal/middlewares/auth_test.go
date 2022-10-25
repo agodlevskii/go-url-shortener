@@ -5,9 +5,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"go-url-shortener/internal/encryptors"
-
 	"github.com/stretchr/testify/assert"
+
+	"go-url-shortener/internal/encryptors"
 )
 
 type mockConfig struct{}

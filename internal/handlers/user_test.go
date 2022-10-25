@@ -5,18 +5,18 @@ import (
 	"net/http"
 	"testing"
 
-	storage3 "go-url-shortener/internal/storage"
-
 	"github.com/stretchr/testify/assert"
+
+	"go-url-shortener/internal/storage"
 )
 
 const route = "/api/user/urls"
 
 func TestGetUserLinks(t *testing.T) {
 	tests := []struct {
-		name    string
-		storage []storage3.ShortURL
-		want    httpRes
+		name   string
+		stored []storage.ShortURL
+		want   httpRes
 	}{
 		{
 			name: "No stored links",
@@ -27,7 +27,7 @@ func TestGetUserLinks(t *testing.T) {
 		},
 		{
 			name: "One stored link",
-			storage: []storage3.ShortURL{{
+			stored: []storage.ShortURL{{
 				ID:      "id",
 				URL:     "url",
 				UID:     UserID,
@@ -43,8 +43,8 @@ func TestGetUserLinks(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := storage3.NewMemoryRepo()
-			if _, err := r.Add(context.Background(), tt.storage); err != nil {
+			r := storage.NewMemoryRepo()
+			if _, err := r.Add(context.Background(), tt.stored); err != nil {
 				t.Fatal(err)
 			}
 
