@@ -147,6 +147,10 @@ func TestAPIShortener(t *testing.T) {
 			} else {
 				assert.Equal(t, tt.want.resp, body)
 			}
+
+			if err = res.Body.Close(); err != nil {
+				t.Fatal(err)
+			}
 		})
 	}
 }
@@ -281,6 +285,10 @@ func TestAPIBatchShortener(t *testing.T) {
 			APIBatchShortener(storage.NewMemoryRepo(), mockConfig{})(w, req)
 			res := w.Result()
 			assert.Equal(t, tt.want.code, res.StatusCode)
+
+			if err = res.Body.Close(); err != nil {
+				t.Fatal(err)
+			}
 		})
 	}
 }
