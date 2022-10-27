@@ -71,6 +71,7 @@ func TestCompress(t *testing.T) {
 func TestDecompress(t *testing.T) {
 	type want struct {
 		reader string
+		writer string
 	}
 
 	tests := []struct {
@@ -81,18 +82,21 @@ func TestDecompress(t *testing.T) {
 	}{
 		{
 			name: "Missing content-type header",
-			want: want{reader: "io.nopCloserWriterTo"},
+			want: want{writer: "*httptest.ResponseRecorder"},
 		},
 		{
 			name: "Correct content-type header",
 			ct:   "gzip",
-			want: want{reader: "*gzip.Reader"},
+			want: want{
+				reader: "*gzip.Reader",
+				writer: "*httptest.ResponseRecorder",
+			},
 			body: "req_body",
 		},
 		{
 			name: "Incorrect content-type header",
 			ct:   "zip",
-			want: want{reader: "io.nopCloserWriterTo"},
+			want: want{writer: "*httptest.ResponseRecorder"},
 			body: "req_body",
 		},
 	}
@@ -100,7 +104,10 @@ func TestDecompress(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				assert.Equal(t, tt.want.reader, reflect.TypeOf(r.Body).String())
+				assert.Equal(t, tt.want.writer, reflect.TypeOf(w).String())
+				if tt.want.reader != "" {
+					assert.Equal(t, tt.want.reader, reflect.TypeOf(r.Body).String())
+				}
 			})
 
 			req := httptest.NewRequest(http.MethodPost, BaseURL, io.NopCloser(bytes.NewBufferString(tt.body)))

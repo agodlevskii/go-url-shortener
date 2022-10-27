@@ -187,7 +187,7 @@ func TestHandleHTTPError(t *testing.T) {
 			res := w.Result()
 			assert.Equal(t, "text/plain; charset=utf-8", res.Header.Get("Content-Type"))
 			assert.Equal(t, "nosniff", res.Header.Get("X-Content-Type-Options"))
-			assert.Equal(t, tt.args.code, w.Result().StatusCode)
+			assert.Equal(t, tt.args.code, res.StatusCode)
 
 			if err := res.Body.Close(); err != nil {
 				t.Fatal(err)
@@ -206,7 +206,7 @@ func TestHandleInternalError(t *testing.T) {
 			res := w.Result()
 			assert.Equal(t, "text/plain; charset=utf-8", res.Header.Get("Content-Type"))
 			assert.Equal(t, "nosniff", res.Header.Get("X-Content-Type-Options"))
-			assert.Equal(t, http.StatusInternalServerError, w.Result().StatusCode)
+			assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
 
 			if err := res.Body.Close(); err != nil {
 				t.Fatal(err)
@@ -225,7 +225,7 @@ func TestHandleURLError(t *testing.T) {
 			res := w.Result()
 			assert.Equal(t, "text/plain; charset=utf-8", res.Header.Get("Content-Type"))
 			assert.Equal(t, "nosniff", res.Header.Get("X-Content-Type-Options"))
-			assert.Equal(t, http.StatusBadRequest, w.Result().StatusCode)
+			assert.Equal(t, http.StatusBadRequest, res.StatusCode)
 
 			if err := res.Body.Close(); err != nil {
 				t.Fatal(err)
@@ -244,7 +244,7 @@ func TestHandleUserError(t *testing.T) {
 			res := w.Result()
 			assert.Equal(t, "text/plain; charset=utf-8", res.Header.Get("Content-Type"))
 			assert.Equal(t, "nosniff", res.Header.Get("X-Content-Type-Options"))
-			assert.Equal(t, http.StatusBadRequest, w.Result().StatusCode)
+			assert.Equal(t, http.StatusBadRequest, res.StatusCode)
 
 			if err := res.Body.Close(); err != nil {
 				t.Fatal(err)
