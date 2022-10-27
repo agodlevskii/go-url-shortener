@@ -66,6 +66,7 @@ func Decompress(next http.Handler) http.Handler {
 			return
 		}
 
+		r.Body = gz
 		if err = gz.Close(); err != nil {
 			log.Error(err)
 		}
