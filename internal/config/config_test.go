@@ -70,3 +70,33 @@ func TestWithFlags(t *testing.T) {
 		})
 	}
 }
+
+func TestConfig_GetBaseURL(t *testing.T) {
+	cfg := New(WithEnv())
+	assert.Equal(t, "http://localhost:8080", cfg.GetBaseURL())
+}
+
+func TestConfig_GetServerAddr(t *testing.T) {
+	cfg := New(WithEnv())
+	assert.Equal(t, "localhost:8080", cfg.GetServerAddr())
+}
+
+func TestConfig_GetStorageFileName(t *testing.T) {
+	cfg := New(WithEnv())
+	assert.Equal(t, "", cfg.GetStorageFileName())
+}
+
+func TestConfig_GetDBURL(t *testing.T) {
+	cfg := New(WithEnv())
+	assert.Equal(t, "", cfg.GetDBURL())
+}
+
+func TestConfig_GetPoolSize(t *testing.T) {
+	cfg := New(WithEnv())
+	assert.Equal(t, 10, cfg.GetPoolSize())
+}
+
+func TestConfig_GetUserCookieName(t *testing.T) {
+	cfg := New(WithEnv())
+	assert.Equal(t, "user_id", cfg.GetUserCookieName())
+}

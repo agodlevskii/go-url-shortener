@@ -147,7 +147,7 @@ func APIBatchShortener(db storage.Storager, cfg APIConfig) http.HandlerFunc {
 		}
 
 		var req []BatchReqData
-		if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
+		if err = json.NewDecoder(r.Body).Decode(&req); err != nil || len(req) == 0 {
 			apperrors.HandleHTTPError(w, apperrors.NewError(apperrors.BatchFormat, err), http.StatusBadRequest)
 			return
 		}

@@ -72,6 +72,10 @@ func (e AppError) Unwrap() error {
 
 // HandleHTTPError creates http.Error based on the custom AppError.
 func HandleHTTPError(w http.ResponseWriter, err *AppError, code int) {
+	if err == nil {
+		err = EmptyError()
+	}
+
 	if err.Facade == "" {
 		err.Facade = http.StatusText(code)
 	}

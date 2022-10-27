@@ -2,6 +2,8 @@ package apperrors
 
 import (
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -147,6 +149,90 @@ func TestNewError(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.Equal(t, tt.want, NewError(tt.args.text, tt.args.err))
+		})
+	}
+}
+
+func TestHandleHTTPError(t *testing.T) {
+	type args struct {
+		err  *AppError
+		code int
+	}
+	tests := []struct {
+		name string
+		args args
+		want *AppError
+	}{
+		{
+			name: "Existing error",
+			args: args{
+				err:  NewError("err", errors.New("err")),
+				code: 500,
+			},
+			want: NewError("", errors.New("err")),
+		},
+		{
+			name: "Missing facade",
+			args: args{
+				err:  nil,
+				code: 500,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			HandleHTTPError(w, tt.args.err, tt.args.code)
+			res := w.Result()
+			assert.Equal(t, "text/plain; charset=utf-8", res.Header.Get("Content-Type"))
+			assert.Equal(t, "nosniff", res.Header.Get("X-Content-Type-Options"))
+			assert.Equal(t, tt.args.code, w.Result().StatusCode)
+		})
+	}
+}
+
+func TestHandleInternalError(t *testing.T) {
+	tests := []struct{ name string }{{name: "Testing function"}}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			HandleInternalError(w)
+			res := w.Result()
+			assert.Equal(t, "text/plain; charset=utf-8", res.Header.Get("Content-Type"))
+			assert.Equal(t, "nosniff", res.Header.Get("X-Content-Type-Options"))
+			assert.Equal(t, http.StatusInternalServerError, w.Result().StatusCode)
+		})
+	}
+}
+
+func TestHandleURLError(t *testing.T) {
+	tests := []struct{ name string }{{name: "Testing function"}}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			HandleURLError(w)
+			res := w.Result()
+			assert.Equal(t, "text/plain; charset=utf-8", res.Header.Get("Content-Type"))
+			assert.Equal(t, "nosniff", res.Header.Get("X-Content-Type-Options"))
+			assert.Equal(t, http.StatusBadRequest, w.Result().StatusCode)
+		})
+	}
+}
+
+func TestHandleUserError(t *testing.T) {
+	tests := []struct{ name string }{{name: "Testing function"}}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			HandleUserError(w)
+			res := w.Result()
+			assert.Equal(t, "text/plain; charset=utf-8", res.Header.Get("Content-Type"))
+			assert.Equal(t, "nosniff", res.Header.Get("X-Content-Type-Options"))
+			assert.Equal(t, http.StatusBadRequest, w.Result().StatusCode)
 		})
 	}
 }

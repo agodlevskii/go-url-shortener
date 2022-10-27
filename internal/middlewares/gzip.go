@@ -65,12 +65,10 @@ func Decompress(next http.Handler) http.Handler {
 			apperrors.HandleHTTPError(w, apperrors.NewError("", err), http.StatusInternalServerError)
 			return
 		}
-		defer func(gz *gzip.Reader) {
-			if cErr := gz.Close(); cErr != nil {
-				log.Error(cErr)
-			}
-		}(gz)
-		r.Body = gz
+
+		if err = gz.Close(); err != nil {
+			log.Error(err)
+		}
 
 		next.ServeHTTP(w, r)
 	})
