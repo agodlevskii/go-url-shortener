@@ -46,7 +46,6 @@ func WithFlags() func(*Config) {
 		flag.StringVar(&cfg.BaseURL, "b", cfg.BaseURL, "The application server port")
 		flag.StringVar(&cfg.DBURL, "d", cfg.DBURL, "The DB connection URL")
 		flag.StringVar(&cfg.Filename, "f", cfg.Filename, "The file storage name")
-		flag.Parse()
 	}
 }
 

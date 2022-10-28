@@ -3,6 +3,7 @@ package mainosexit
 import (
 	"go/ast"
 	"go/token"
+
 	"golang.org/x/tools/go/analysis"
 )
 
