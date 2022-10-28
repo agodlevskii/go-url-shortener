@@ -18,7 +18,11 @@ const Doc = `detect whether the os.Exit function is being used in the main funct
 The mainosexit analysis reports whether a main function explicitly uses os.Exit function.`
 
 func run(pass *analysis.Pass) (interface{}, error) {
-	if pass.Pkg.Name() != "main" {
+	const (
+		packName string = "main"
+		funcName string = "main"
+	)
+	if pass.Pkg.Name() != packName {
 		return nil, nil
 	}
 
@@ -26,8 +30,9 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	for _, file := range pass.Files {
 		ast.Inspect(file, func(n ast.Node) bool {
 			switch x := n.(type) {
+			case *ast.Package:
 			case *ast.FuncDecl:
-				if x.Name.String() == "main" {
+				if x.Name.String() == funcName {
 					if spot, pos := doesFuncCallExit(x); spot {
 						pass.Reportf(pos, "the main function explicitly calls for os.Exit()")
 						errFound = true
@@ -53,16 +58,24 @@ func doesFuncCallExit(f *ast.FuncDecl) (bool, token.Pos) {
 	var ident *ast.Ident
 
 	for _, stmt := range f.Body.List {
-		if exprStmt, ok = stmt.(*ast.ExprStmt); ok {
-			if callExpr, ok = exprStmt.X.(*ast.CallExpr); ok {
-				if selectorExpr, ok = callExpr.Fun.(*ast.SelectorExpr); ok {
-					if ident, ok = selectorExpr.X.(*ast.Ident); ok {
-						if ident.Name == "os" && selectorExpr.Sel.Name == "Exit" {
-							return true, selectorExpr.Pos()
-						}
-					}
-				}
-			}
+		if exprStmt, ok = stmt.(*ast.ExprStmt); !ok {
+			continue
+		}
+
+		if callExpr, ok = exprStmt.X.(*ast.CallExpr); !ok {
+			continue
+		}
+
+		if selectorExpr, ok = callExpr.Fun.(*ast.SelectorExpr); !ok {
+			continue
+		}
+
+		if ident, ok = selectorExpr.X.(*ast.Ident); !ok {
+			continue
+		}
+
+		if ident.Name == "os" && selectorExpr.Sel.Name == "Exit" {
+			return true, selectorExpr.Pos()
 		}
 	}
 

@@ -64,7 +64,6 @@ func TestAuthorize(t *testing.T) {
 				} else {
 					assert.Equal(t, tt.want, string(dec))
 				}
-
 			})
 
 			req := httptest.NewRequest(http.MethodGet, BaseURL, nil)

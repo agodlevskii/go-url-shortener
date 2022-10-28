@@ -125,7 +125,6 @@ func TestAPIShortener(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			req := httptest.NewRequest(http.MethodPost, "/api/shorten/batch", bytes.NewBufferString(tt.data))
 			if tt.cookie != nil {
 				req.AddCookie(tt.cookie)
