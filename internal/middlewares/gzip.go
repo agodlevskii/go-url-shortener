@@ -6,10 +6,10 @@ import (
 	"strconv"
 	"strings"
 
+	log "github.com/sirupsen/logrus"
+
 	"go-url-shortener/internal/apperrors"
 	"go-url-shortener/internal/respwriters"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // Compress provides a gzip-based encryption for the response.
@@ -65,12 +65,11 @@ func Decompress(next http.Handler) http.Handler {
 			apperrors.HandleHTTPError(w, apperrors.NewError("", err), http.StatusInternalServerError)
 			return
 		}
-		defer func(gz *gzip.Reader) {
-			if cErr := gz.Close(); cErr != nil {
-				log.Error(cErr)
-			}
-		}(gz)
+
 		r.Body = gz
+		if err = gz.Close(); err != nil {
+			log.Error(err)
+		}
 
 		next.ServeHTTP(w, r)
 	})

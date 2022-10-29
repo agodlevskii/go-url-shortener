@@ -1,6 +1,8 @@
 package middlewares
 
 import (
+	"bytes"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -68,12 +70,14 @@ func TestCompress(t *testing.T) {
 
 func TestDecompress(t *testing.T) {
 	type want struct {
+		reader string
 		writer string
 	}
 
 	tests := []struct {
 		name string
 		ct   string
+		body string
 		want want
 	}{
 		{
@@ -83,7 +87,17 @@ func TestDecompress(t *testing.T) {
 		{
 			name: "Correct content-type header",
 			ct:   "gzip",
+			want: want{
+				reader: "*gzip.Reader",
+				writer: "*httptest.ResponseRecorder",
+			},
+			body: "req_body",
+		},
+		{
+			name: "Incorrect content-type header",
+			ct:   "zip",
 			want: want{writer: "*httptest.ResponseRecorder"},
+			body: "req_body",
 		},
 	}
 
@@ -91,10 +105,13 @@ func TestDecompress(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				assert.Equal(t, tt.want.writer, reflect.TypeOf(w).String())
+				if tt.want.reader != "" {
+					assert.Equal(t, tt.want.reader, reflect.TypeOf(r.Body).String())
+				}
 			})
 
-			req := httptest.NewRequest(http.MethodGet, BaseURL, nil)
-			req.Header.Add("Accept-Encoding", tt.ct)
+			req := httptest.NewRequest(http.MethodPost, BaseURL, io.NopCloser(bytes.NewBufferString(tt.body)))
+			req.Header.Add("Content-Encoding", tt.ct)
 
 			handler := Decompress(next)
 			handler.ServeHTTP(httptest.NewRecorder(), req)

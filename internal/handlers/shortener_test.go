@@ -1,14 +1,19 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"io"
 	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"go-url-shortener/internal/apperrors"
 	"go-url-shortener/internal/storage"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestWebShortener(t *testing.T) {
@@ -75,10 +80,21 @@ func TestAPIShortener(t *testing.T) {
 		name         string
 		want         httpRes
 		data         string
+		cookie       *http.Cookie
 		checkInclude bool
 	}{
 		{
-			name: "Missing body",
+			name: "Missing cookie",
+			data: `{ "url": "https://google.com" }`,
+			want: httpRes{
+				code:        http.StatusBadRequest,
+				resp:        apperrors.UserID,
+				contentType: "text/plain; charset=utf-8",
+			},
+		},
+		{
+			name:   "Missing body",
+			cookie: &http.Cookie{Name: UserCookieName, Value: UserIDEnc, Path: "/"},
 			want: httpRes{
 				code:        http.StatusBadRequest,
 				resp:        apperrors.URLFormat,
@@ -86,7 +102,8 @@ func TestAPIShortener(t *testing.T) {
 			},
 		},
 		{
-			name: "Empty body",
+			name:   "Empty body",
+			cookie: &http.Cookie{Name: UserCookieName, Value: UserIDEnc, Path: "/"},
 			want: httpRes{
 				code:        http.StatusBadRequest,
 				resp:        apperrors.URLFormat,
@@ -95,32 +112,42 @@ func TestAPIShortener(t *testing.T) {
 		},
 		{
 			name:         "Correct body",
+			cookie:       &http.Cookie{Name: UserCookieName, Value: UserIDEnc, Path: "/"},
 			data:         `{ "url": "https://google.com" }`,
 			checkInclude: true,
 			want: httpRes{
 				code:        http.StatusCreated,
-				resp:        `{"result":` + `"` + BaseURL,
+				resp:        BaseURL,
 				contentType: "application/json",
 			},
 		},
 	}
 
-	ts := getTestServer(nil)
-	defer ts.Close()
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resp, body := testRequest(t, ts, http.MethodPost, "/api/shorten", tt.data)
+			req := httptest.NewRequest(http.MethodPost, "/api/shorten/batch", bytes.NewBufferString(tt.data))
+			if tt.cookie != nil {
+				req.AddCookie(tt.cookie)
+			}
+			w := httptest.NewRecorder()
 
-			assert.Equal(t, tt.want.code, resp.StatusCode)
-			assert.Equal(t, tt.want.contentType, resp.Header.Get("Content-Type"))
+			APIShortener(storage.NewMemoryRepo(), mockConfig{})(w, req)
+			res := w.Result()
+			b, err := io.ReadAll(res.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			body := strings.Trim(string(b), "\n")
+			assert.Equal(t, tt.want.code, res.StatusCode)
+			assert.Equal(t, tt.want.contentType, res.Header.Get("Content-Type"))
 			if tt.checkInclude {
 				assert.Contains(t, body, tt.want.resp)
 			} else {
 				assert.Equal(t, tt.want.resp, body)
 			}
 
-			if err := resp.Body.Close(); err != nil {
+			if err = res.Body.Close(); err != nil {
 				t.Fatal(err)
 			}
 		})
@@ -191,6 +218,74 @@ func TestWebGetFullURL(t *testing.T) {
 			}
 
 			if err := resp.Body.Close(); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}
+
+func TestAPIBatchShortener(t *testing.T) {
+	type args struct {
+		cookie *http.Cookie
+		body   []BatchReqData
+	}
+	type want struct {
+		code int
+		cp   string
+	}
+
+	tests := []struct {
+		name string
+		args args
+		want want
+	}{
+		{
+			name: "Missing cookie",
+			want: want{code: http.StatusBadRequest},
+		},
+		{
+			name: "Incorrect cookie",
+			args: args{cookie: &http.Cookie{Name: UserCookieName, Value: "bad_cookie", Path: "/"}},
+			want: want{code: http.StatusBadRequest},
+		},
+		{
+			name: "Incorrect body",
+			args: args{cookie: &http.Cookie{Name: UserCookieName, Value: UserIDEnc, Path: "/"}},
+			want: want{code: http.StatusBadRequest},
+		},
+		{
+			name: "Correct body",
+			args: args{
+				cookie: &http.Cookie{Name: UserCookieName, Value: UserIDEnc, Path: "/"},
+				body: []BatchReqData{
+					{CorrelationID: "google", OriginalURL: "https://google.com"},
+					{CorrelationID: "facebook", OriginalURL: "https://facebook.com"},
+				},
+			},
+			want: want{
+				code: http.StatusCreated,
+				cp:   "application/json",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b, err := json.Marshal(tt.args.body)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			req := httptest.NewRequest(http.MethodPost, "/api/shorten/batch", bytes.NewReader(b))
+			if tt.args.cookie != nil {
+				req.AddCookie(tt.args.cookie)
+			}
+			w := httptest.NewRecorder()
+
+			APIBatchShortener(storage.NewMemoryRepo(), mockConfig{})(w, req)
+			res := w.Result()
+			assert.Equal(t, tt.want.code, res.StatusCode)
+
+			if err = res.Body.Close(); err != nil {
 				t.Fatal(err)
 			}
 		})

@@ -5,9 +5,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"go-url-shortener/internal/encryptors"
-
 	"github.com/stretchr/testify/assert"
+
+	"go-url-shortener/internal/encryptors"
 )
 
 type mockConfig struct{}
@@ -24,23 +24,57 @@ const (
 )
 
 func TestAuthorize(t *testing.T) {
-	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cookie, err := r.Cookie(UserCookieName)
-		if err != nil {
-			t.Error(err)
-		}
+	tests := []struct {
+		name      string
+		cookie    *http.Cookie
+		want      string
+		wantOther bool
+	}{
+		{
+			name:      "Missing cookie",
+			wantOther: true,
+		},
+		{
+			name:   "Valid cookie",
+			cookie: &http.Cookie{Name: UserCookieName, Value: UserIDEnc, Path: "/"},
+			want:   UserID,
+		},
+		{
+			name:      "Invalid cookie",
+			cookie:    &http.Cookie{Name: UserCookieName, Value: "bad_cookie", Path: "/"},
+			wantOther: true,
+		},
+	}
 
-		dec, err := encryptors.AESDecrypt(cookie.Value)
-		if err != nil {
-			t.Fatal(err)
-		}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				cookie, err := r.Cookie(UserCookieName)
+				if err != nil {
+					t.Fatal(err)
+				}
 
-		assert.Equal(t, 16, len(dec))
-	})
+				dec, err := encryptors.AESDecrypt(cookie.Value)
+				if err != nil {
+					t.Fatal(err)
+				}
 
-	req := httptest.NewRequest(http.MethodGet, BaseURL, nil)
-	handler := Authorize(mockConfig{})(next)
-	handler.ServeHTTP(httptest.NewRecorder(), req)
+				if cookie.Value != UserIDEnc {
+					assert.True(t, tt.wantOther)
+				} else {
+					assert.Equal(t, tt.want, string(dec))
+				}
+			})
+
+			req := httptest.NewRequest(http.MethodGet, BaseURL, nil)
+			if tt.cookie != nil {
+				req.AddCookie(tt.cookie)
+			}
+
+			handler := Authorize(mockConfig{})(next)
+			handler.ServeHTTP(httptest.NewRecorder(), req)
+		})
+	}
 }
 
 func TestGetUserID(t *testing.T) {
@@ -51,40 +85,31 @@ func TestGetUserID(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:   "Existing cookie",
+			name:    "Missing cookie",
+			wantErr: true,
+		},
+		{
+			name:   "Valid cookie",
 			cookie: &http.Cookie{Name: UserCookieName, Value: UserIDEnc, Path: "/"},
 			want:   UserID,
 		},
 		{
-			name:    "Missing",
+			name:    "Invalid cookie",
+			cookie:  &http.Cookie{Name: UserCookieName, Value: "bad_cookie", Path: "/"},
 			wantErr: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if tt.cookie != nil {
-					http.SetCookie(w, tt.cookie)
-				}
-
-				w.Header().Set("Content-Type", "text/plain")
-				w.WriteHeader(200)
-			}))
-			defer ts.Close()
-
-			do, err := ts.Client().Do(httptest.NewRequest(http.MethodGet, BaseURL, nil))
-			if err != nil {
-				return
+			req := httptest.NewRequest(http.MethodGet, BaseURL, nil)
+			if tt.cookie != nil {
+				req.AddCookie(tt.cookie)
 			}
 
-			got, err := GetUserID(mockConfig{}, do.Request)
+			got, err := GetUserID(mockConfig{}, req)
 			assert.Equal(t, tt.want, got)
 			assert.Equal(t, tt.wantErr, err != nil)
-
-			if cErr := do.Body.Close(); cErr != nil {
-				t.Fatal(cErr)
-			}
 		})
 	}
 }

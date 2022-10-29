@@ -11,11 +11,10 @@ import (
 	"strings"
 	"testing"
 
-	"go-url-shortener/internal/storage"
-
 	"github.com/stretchr/testify/assert"
-
 	"github.com/stretchr/testify/require"
+
+	"go-url-shortener/internal/storage"
 )
 
 type httpRes struct {

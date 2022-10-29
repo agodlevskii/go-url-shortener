@@ -2,18 +2,30 @@ package main
 
 import (
 	"context"
+	"flag"
+	"fmt"
 	"net/http"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"go-url-shortener/internal/config"
 	"go-url-shortener/internal/handlers"
 	"go-url-shortener/internal/storage"
+)
 
-	log "github.com/sirupsen/logrus"
+var (
+	buildVersion string
+	buildDate    string
+	buildCommit  string
 )
 
 func main() {
+	printCompilationInfo()
+
 	cfg := config.New(config.WithEnv(), config.WithFlags())
+	flag.Parse()
+
 	repo, err := getRepo(context.Background(), cfg)
 	if err != nil {
 		log.Fatal(err)
@@ -47,4 +59,18 @@ func getServer(addr string, handler http.Handler) *http.Server {
 		Handler:           handler,
 		ReadHeaderTimeout: 3 * time.Second,
 	}
+}
+
+func printCompilationInfo() {
+	version := getCompilationInfoValue(buildVersion)
+	date := getCompilationInfoValue(buildDate)
+	commit := getCompilationInfoValue(buildCommit)
+	fmt.Printf("Build version: %s\nBuild date: %s\nBuild commit: %s\n\n", version, date, commit)
+}
+
+func getCompilationInfoValue(v string) string {
+	if v != "" {
+		return v
+	}
+	return "N/A"
 }
