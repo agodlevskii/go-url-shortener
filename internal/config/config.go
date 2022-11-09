@@ -4,11 +4,12 @@ package config
 import (
 	"encoding/json"
 	"flag"
-	"github.com/caarlos0/env"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"reflect"
+
+	"github.com/caarlos0/env"
+	log "github.com/sirupsen/logrus"
 )
 
 // Config describes the configuration required across the application.
