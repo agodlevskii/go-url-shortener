@@ -25,14 +25,6 @@ type Config struct {
 	UserCookieName string
 }
 
-var cfgToFileMap = map[string]string{
-	"Addr":     "server_address",
-	"BaseURL":  "base_url",
-	"DBURL":    "database_dsn",
-	"Filename": "file_storage_path",
-	"Secure":   "enable_https",
-}
-
 func New(opts ...func(*Config)) *Config {
 	cfg := &Config{
 		UserCookieName: "user_id",
@@ -72,30 +64,29 @@ func WithFile() func(*Config) {
 		if cfg.ConfigFile == "" {
 			return
 		}
-		fCfg, err := getConfigFromFile(cfg.ConfigFile)
+		fileCfg, err := getConfigFromFile(cfg.ConfigFile)
 		if err != nil {
 			log.Error(err)
 			return
 		}
 
 		rCfg := reflect.Indirect(reflect.ValueOf(cfg))
+		rFileCfg := reflect.ValueOf(fileCfg)
 		for i := 0; i < rCfg.NumField(); i++ {
 			rField := rCfg.Type().Field(i).Name
 			rValue := rCfg.FieldByName(rField)
 
-			if fileField, ok := cfgToFileMap[rField]; ok && rValue.CanSet() && rValue.IsZero() {
-				if fileValue, ok := fCfg[fileField]; ok {
-					rValue.Set(reflect.ValueOf(fileValue))
+			if rValue.IsZero() && rValue.CanSet() {
+				if fileValue := rFileCfg.FieldByName(rField); !fileValue.IsZero() {
+					rValue.Set(fileValue)
 				}
 			}
 		}
-
-		log.Info(cfg)
 	}
 }
 
-func getConfigFromFile(filepath string) (map[string]interface{}, error) {
-	var cfg map[string]interface{}
+func getConfigFromFile(filepath string) (Config, error) {
+	var cfg Config
 
 	file, err := os.OpenFile(filepath, os.O_RDONLY|os.O_CREATE, 0o777)
 	if err != nil {
