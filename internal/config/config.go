@@ -11,11 +11,12 @@ import (
 // Config describes the configuration required across the application.
 // Since the configuration can be initiated via the environment flags, the struct contains the required annotation.
 type Config struct {
-	Addr           string `env:"SERVER_ADDRESS" envDefault:"localhost:8080"`
-	BaseURL        string `env:"BASE_URL" envDefault:"http://localhost:8080"`
-	DBURL          string `env:"DATABASE_DSN"`
-	Filename       string `env:"FILE_STORAGE_PATH"`
+	Addr           string
+	BaseURL        string
+	DBURL          string
+	Filename       string
 	PoolSize       int
+	Secure         bool
 	UserCookieName string
 }
 
@@ -45,6 +46,7 @@ func WithFlags() func(*Config) {
 		flag.StringVar(&cfg.Addr, "a", cfg.Addr, "The application server address")
 		flag.StringVar(&cfg.BaseURL, "b", cfg.BaseURL, "The application server port")
 		flag.StringVar(&cfg.DBURL, "d", cfg.DBURL, "The DB connection URL")
+		flag.BoolVar(&cfg.Secure, "s", cfg.Secure, "The HTTPS connection config")
 		flag.StringVar(&cfg.Filename, "f", cfg.Filename, "The file storage name")
 	}
 }
@@ -55,6 +57,10 @@ func (c *Config) GetBaseURL() string {
 
 func (c *Config) GetDBURL() string {
 	return c.DBURL
+}
+
+func (c *Config) IsSecure() bool {
+	return c.Secure
 }
 
 func (c *Config) GetPoolSize() int {
