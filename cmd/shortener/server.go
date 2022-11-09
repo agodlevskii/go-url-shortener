@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"crypto/tls"
-	"flag"
 	"fmt"
 	"net/http"
 	"time"
@@ -23,9 +22,7 @@ var (
 
 func main() {
 	printCompilationInfo()
-
-	cfg := config.New(config.WithEnv(), config.WithFlags())
-	flag.Parse()
+	cfg := config.New(config.WithEnv(), config.WithFlags(), config.WithFile())
 
 	repo, err := getRepo(context.Background(), cfg)
 	if err != nil {
