@@ -36,6 +36,3 @@ jobs:
         run: |
           go install mvdan.cc/gofumpt@v0.3.1
           go install github.com/rinchsan/gosimports/cmd/gosimports@v0.1.5
-
-      - name: Check repository diff
-        run: bash ./.github/scripts/check-work-copy-equals-to-committed.sh "auto-format broken"
