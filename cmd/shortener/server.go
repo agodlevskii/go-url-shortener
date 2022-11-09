@@ -40,12 +40,6 @@ func main() {
 
 	r := handlers.NewShortenerRouter(cfg, repo)
 	serv := getServer(cfg, r)
-	defer func(serv *http.Server) {
-		if sErr := serv.Close(); sErr != nil {
-			log.Error(sErr)
-		}
-	}(serv)
-
 	if cfg.IsSecure() {
 		if err = serv.ListenAndServeTLS("tls.crt", "tls.key"); err != nil {
 			log.Error(err)
@@ -75,7 +69,6 @@ func getServer(cfg *config.Config, handler http.Handler) *http.Server {
 	}
 
 	if cfg.IsSecure() {
-		log.Info("secure")
 		s.TLSConfig = getTLSConfig()
 	}
 
@@ -102,9 +95,6 @@ func getTLSConfig() *tls.Config {
 		CurvePreferences: []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
 		CipherSuites: []uint16{
 			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-			tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
-			tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
-			tls.TLS_RSA_WITH_AES_256_CBC_SHA,
 		},
 	}
 }

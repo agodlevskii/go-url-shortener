@@ -11,12 +11,12 @@ import (
 // Config describes the configuration required across the application.
 // Since the configuration can be initiated via the environment flags, the struct contains the required annotation.
 type Config struct {
-	Addr           string
-	BaseURL        string
-	DBURL          string
-	Filename       string
+	Addr           string `env:"SERVER_ADDRESS" envDefault:"localhost:8080"`
+	BaseURL        string `env:"BASE_URL" envDefault:"http://localhost:8080"`
+	DBURL          string `env:"DATABASE_DSN"`
+	Filename       string `env:"FILE_STORAGE_PATH"`
 	PoolSize       int
-	Secure         bool
+	Secure         bool `env:"ENABLE_HTTPS"`
 	UserCookieName string
 }
 
@@ -29,6 +29,8 @@ func New(opts ...func(*Config)) *Config {
 	for _, o := range opts {
 		o(cfg)
 	}
+
+	log.Info(cfg)
 
 	return cfg
 }
