@@ -3,8 +3,12 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -37,14 +41,41 @@ func main() {
 
 	r := handlers.NewShortenerRouter(cfg, repo)
 	serv := getServer(cfg, r)
+	idleConnectionsClosed := make(chan struct{})
+
+	go func() {
+		exit := make(chan os.Signal, 1)
+		signal.Notify(exit, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+
+		<-exit
+		stopServer(serv)
+		close(idleConnectionsClosed)
+	}()
+
+	go startServer(serv, cfg)
+	<-idleConnectionsClosed
+}
+
+func startServer(s *http.Server, cfg *config.Config) {
+	var err error
+
 	if cfg.IsSecure() {
-		if err = serv.ListenAndServeTLS("tls.crt", "tls.key"); err != nil {
-			log.Error(err)
-		}
+		err = s.ListenAndServeTLS("tls.crt", "tls.key")
 	} else {
-		if err = serv.ListenAndServe(); err != nil {
-			log.Error(err)
-		}
+		err = s.ListenAndServe()
+	}
+
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
+		log.Error(err)
+	}
+}
+
+func stopServer(s *http.Server) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	if err := s.Shutdown(ctx); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		log.Error(err)
 	}
 }
 

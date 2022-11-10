@@ -36,7 +36,7 @@ type DBRepo struct {
 // If the DB didn't connect, or the DB table creation has failed, the error will be returned.
 func NewDBRepo(ctx context.Context, url string) (DBRepo, error) {
 	db, err := sql.Open("pgx", url)
-	if err != nil {
+	if err != nil || url == "" {
 		return DBRepo{}, err
 	}
 

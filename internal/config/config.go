@@ -20,21 +20,19 @@ type Config struct {
 	ConfigFile     string `env:"CONFIG"`
 	DBURL          string `json:"database_dsn" env:"DATABASE_DSN"`
 	Filename       string `json:"file_storage_path" env:"FILE_STORAGE_PATH"`
-	PoolSize       int
-	Secure         bool `json:"enable_https" env:"ENABLE_HTTPS"`
-	UserCookieName string
+	PoolSize       int    `json:"pool_size" env:"POOL_SIZE" envDefault:"10"`
+	Secure         bool   `json:"enable_https" env:"ENABLE_HTTPS"`
+	UserCookieName string `json:"user_cookie" env:"USER_COOKIE" envDefault:"user_id"`
 }
 
 func New(opts ...func(*Config)) *Config {
 	cfg := &Config{
-		UserCookieName: "user_id",
 		PoolSize:       10,
+		UserCookieName: "user_id",
 	}
-
 	for _, o := range opts {
 		o(cfg)
 	}
-
 	return cfg
 }
 
