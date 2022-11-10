@@ -19,7 +19,8 @@ func TestNewDBRepo(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "Missing URL",
+			name:    "Missing URL",
+			wantErr: true,
 		},
 		{
 			name:    "Incorrect URL",
