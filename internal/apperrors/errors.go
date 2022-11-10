@@ -22,6 +22,7 @@ const (
 	FilenameMissing  = "the filename is missing"
 	FileMalformed    = "the file is malformed"
 	RepoEntryInvalid = "the stored entry is invalid"
+	EmptyDBURL       = "the provided DB URL is empty"
 )
 
 // AppError describes a custom error.
