@@ -11,6 +11,33 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestNewDBRepo(t *testing.T) {
+	tests := []struct {
+		name    string
+		url     string
+		want    DBRepo
+		wantErr bool
+	}{
+		{
+			name:    "Missing URL",
+			wantErr: true,
+		},
+		{
+			name:    "Incorrect URL",
+			url:     "test",
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := NewDBRepo(context.Background(), tt.url)
+			assert.Equal(t, tt.want, got)
+			assert.Equal(t, tt.wantErr, err != nil)
+		})
+	}
+}
+
 func TestDBRepo_Add(t *testing.T) {
 	for _, tt := range getAddTestCases() {
 		t.Run(tt.name, func(t *testing.T) {
@@ -212,8 +239,24 @@ func TestDBRepo_Has(t *testing.T) {
 	}
 }
 
+func TestDBRepo_Ping(t *testing.T) {
+	t.Run("ping", func(t *testing.T) {
+		db, mock := getMock(t)
+		defer func(db *sql.DB) {
+			if err := db.Close(); err != nil {
+				t.Fatal(err)
+			}
+		}(db)
+		r := DBRepo{db: db}
+
+		mock.ExpectPing()
+		mock.ExpectClose()
+		assert.True(t, r.Ping(context.Background()))
+	})
+}
+
 func getMock(t *testing.T) (*sql.DB, sqlmock.Sqlmock) {
-	db, mock, err := sqlmock.New()
+	db, mock, err := sqlmock.New(sqlmock.MonitorPingsOption(true))
 	if err != nil {
 		t.Fatal(err)
 	}

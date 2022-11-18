@@ -2,9 +2,13 @@ package main
 
 import (
 	"context"
-	"flag"
+	"crypto/tls"
+	"errors"
 	"fmt"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -22,9 +26,7 @@ var (
 
 func main() {
 	printCompilationInfo()
-
-	cfg := config.New(config.WithEnv(), config.WithFlags())
-	flag.Parse()
+	cfg := config.New(config.WithEnv(), config.WithFlags(), config.WithFile())
 
 	repo, err := getRepo(context.Background(), cfg)
 	if err != nil {
@@ -38,27 +40,67 @@ func main() {
 	}(repo)
 
 	r := handlers.NewShortenerRouter(cfg, repo)
-	if err = getServer(cfg.Addr, r).ListenAndServe(); err != nil {
+	serv := getServer(cfg, r)
+	idleConnectionsClosed := make(chan struct{})
+
+	go func() {
+		exit := make(chan os.Signal, 1)
+		signal.Notify(exit, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+
+		<-exit
+		stopServer(serv)
+		close(idleConnectionsClosed)
+	}()
+
+	go startServer(serv, cfg)
+	<-idleConnectionsClosed
+}
+
+func startServer(s *http.Server, cfg *config.Config) {
+	var err error
+
+	if cfg.IsSecure() {
+		err = s.ListenAndServeTLS("tls.crt", "tls.key")
+	} else {
+		err = s.ListenAndServe()
+	}
+
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
+		log.Error(err)
+	}
+}
+
+func stopServer(s *http.Server) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	if err := s.Shutdown(ctx); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Error(err)
 	}
 }
 
 func getRepo(ctx context.Context, cfg *config.Config) (storage.Storager, error) {
-	if cfg.DBURL != "" {
-		return storage.NewDBRepo(ctx, cfg.DBURL)
+	if cfg.GetDBURL() != "" {
+		return storage.NewDBRepo(ctx, cfg.GetDBURL())
 	}
-	if cfg.Filename != "" {
-		return storage.NewFileRepo(cfg.Filename)
+	if cfg.GetStorageFileName() != "" {
+		return storage.NewFileRepo(cfg.GetStorageFileName())
 	}
 	return storage.NewMemoryRepo(), nil
 }
 
-func getServer(addr string, handler http.Handler) *http.Server {
-	return &http.Server{
-		Addr:              addr,
+func getServer(cfg *config.Config, handler http.Handler) *http.Server {
+	s := &http.Server{
+		Addr:              cfg.GetServerAddr(),
 		Handler:           handler,
 		ReadHeaderTimeout: 3 * time.Second,
 	}
+
+	if cfg.IsSecure() {
+		s.TLSConfig = getTLSConfig()
+	}
+
+	return s
 }
 
 func printCompilationInfo() {
@@ -73,4 +115,14 @@ func getCompilationInfoValue(v string) string {
 		return v
 	}
 	return "N/A"
+}
+
+func getTLSConfig() *tls.Config {
+	return &tls.Config{
+		MinVersion:       tls.VersionTLS12,
+		CurvePreferences: []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
+		CipherSuites: []uint16{
+			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+		},
+	}
 }

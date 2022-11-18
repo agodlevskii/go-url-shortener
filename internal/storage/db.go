@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"go-url-shortener/internal/apperrors"
 
 	_ "github.com/jackc/pgx/v4/stdlib" // SQL driver
 	"github.com/lib/pq"
@@ -35,6 +36,10 @@ type DBRepo struct {
 // NewDBRepo returns a new instance of the DBRepo type.
 // If the DB didn't connect, or the DB table creation has failed, the error will be returned.
 func NewDBRepo(ctx context.Context, url string) (DBRepo, error) {
+	if url == "" {
+		return DBRepo{}, errors.New(apperrors.EmptyDBURL)
+	}
+
 	db, err := sql.Open("pgx", url)
 	if err != nil {
 		return DBRepo{}, err
