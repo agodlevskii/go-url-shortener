@@ -24,7 +24,7 @@ type Storager interface {
 	Clear(ctx context.Context)
 	Delete(ctx context.Context, batch []ShortURL) error
 	Get(ctx context.Context, id string) (ShortURL, error)
-	GetAll(ctx context.Context, userID string) ([]ShortURL, error)
+	GetAll(ctx context.Context, userID string, isStat bool) ([]ShortURL, error)
 	Has(ctx context.Context, id string) (bool, error)
 	Ping(ctx context.Context) bool
 	Close() error

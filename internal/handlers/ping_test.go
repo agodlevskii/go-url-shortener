@@ -30,7 +30,7 @@ func (m *mockDB) Get(context.Context, string) (storage.ShortURL, error) {
 	return storage.ShortURL{}, nil
 }
 
-func (m *mockDB) GetAll(context.Context, string) ([]storage.ShortURL, error) {
+func (m *mockDB) GetAll(context.Context, string, bool) ([]storage.ShortURL, error) {
 	return nil, nil
 }
 

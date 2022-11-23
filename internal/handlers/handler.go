@@ -16,6 +16,7 @@ type APIConfig interface {
 	GetBaseURL() string
 	GetPoolSize() int
 	GetUserCookieName() string
+	GetTrustedSubnet() string
 }
 
 // NewShortenerRouter creates a new application router with the required middleware attached.
@@ -43,6 +44,10 @@ func NewShortenerRouter(cfg APIConfig, db storage.Storager) *chi.Mux {
 					r.Get("/", GetUserLinks(db, cfg))
 					r.Delete("/", DeleteUserLinks(db, cfg))
 				})
+			})
+
+			r.Route("/internal", func(r chi.Router) {
+				r.Get("/stats", Statistics(db, cfg.GetTrustedSubnet()))
 			})
 		})
 

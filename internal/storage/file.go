@@ -98,7 +98,7 @@ func (f FileRepo) Get(_ context.Context, id string) (ShortURL, error) {
 // GetAll returns all the ShortURL values created by the specified user.
 // If the repository doesn't have any associated value, the empty slice will be returned.
 // Otherwise, it will be opened for reading.
-func (f FileRepo) GetAll(_ context.Context, userID string) ([]ShortURL, error) {
+func (f FileRepo) GetAll(_ context.Context, userID string, isStat bool) ([]ShortURL, error) {
 	file, err := os.OpenFile(path.Clean(f.filename), os.O_RDONLY|os.O_CREATE, 0o777)
 	if err != nil {
 		return nil, err
@@ -117,7 +117,7 @@ func (f FileRepo) GetAll(_ context.Context, userID string) ([]ShortURL, error) {
 			return nil, err
 		}
 
-		if sURL.UID == userID {
+		if isStat || sURL.UID == userID {
 			urls = append(urls, sURL)
 		}
 	}

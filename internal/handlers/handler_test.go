@@ -38,6 +38,10 @@ func (m mockConfig) GetUserCookieName() string {
 	return UserCookieName
 }
 
+func (m mockConfig) GetTrustedSubnet() string {
+	return "172.0.0.1/32"
+}
+
 const (
 	BaseURL        = "http://localhost:8080"
 	UserIDEnc      = "4b529d6712a1d59f62a87dc4fa54f332"
