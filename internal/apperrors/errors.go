@@ -20,9 +20,9 @@ const (
 	IDGeneration     = "cannot generate the ID"
 	RandomStrLen     = "random string length is missing"
 	FilenameMissing  = "the filename is missing"
-	FileMalformed    = "the file is malformed"
 	RepoEntryInvalid = "the stored entry is invalid"
 	EmptyDBURL       = "the provided DB URL is empty"
+	UntrustedIP      = "the request came from outside of the trusted subnet"
 )
 
 // AppError describes a custom error.

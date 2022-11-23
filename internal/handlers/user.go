@@ -82,7 +82,7 @@ func DeleteUserLinks(db storage.Storager, cfg APIConfig) http.HandlerFunc {
 // getLinks recovers the user-associated links from the repository.
 // In case if there are no links to return, the function returns nil instead of the empty slice.
 func getLinks(ctx context.Context, db storage.Storager, userID, baseURL string) []UserLink {
-	urls, err := db.GetAll(ctx, userID)
+	urls, err := db.GetAll(ctx, userID, false)
 	if err != nil {
 		log.Error(err)
 		return nil

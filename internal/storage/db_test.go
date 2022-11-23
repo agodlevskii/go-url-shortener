@@ -191,7 +191,7 @@ func TestDBRepo_GetAll(t *testing.T) {
 			if _, err := r.Add(context.Background(), tt.state); err != nil {
 				t.Fatal(err)
 			}
-			got, err := r.GetAll(context.Background(), UserID)
+			got, err := r.GetAll(context.Background(), UserID, false)
 			gotMap := make(map[string]bool)
 			for _, gv := range got {
 				gotMap[gv.ID] = true
