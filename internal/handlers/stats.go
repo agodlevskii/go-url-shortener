@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"go-url-shortener/internal/apperrors"
 	"go-url-shortener/internal/storage"
+	"net"
 	"net/http"
-	"net/netip"
 )
 
 type Stats struct {
@@ -17,18 +17,18 @@ type Stats struct {
 func Statistics(db storage.Storager, trustedSubnet string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var (
-			network netip.Prefix
-			ip      netip.Addr
+			network *net.IPNet
+			ip      net.IP
 			stats   Stats
 			err     error
 		)
 
-		if network, err = netip.ParsePrefix(trustedSubnet); err == nil {
+		if _, network, err = net.ParseCIDR(trustedSubnet); err == nil {
 			handleTrustedSubnetError(w, err)
 		}
 
 		ipStr := r.Header.Get("X-Real-IP")
-		if ip, err = netip.ParseAddr(ipStr); err == nil && network.Contains(ip) {
+		if ip, _, err = net.ParseCIDR(ipStr); err == nil && network.Contains(ip) {
 			stats, err = getStats(r.Context(), db)
 			if err != nil {
 				apperrors.HandleInternalError(w)
