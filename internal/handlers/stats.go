@@ -18,17 +18,17 @@ func Statistics(db storage.Storager, trustedSubnet string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var (
 			network *net.IPNet
-			ip      net.IP
 			stats   Stats
 			err     error
 		)
 
-		if _, network, err = net.ParseCIDR(trustedSubnet); err == nil {
+		if _, network, err = net.ParseCIDR(trustedSubnet); err != nil {
 			handleTrustedSubnetError(w, err)
+			return
 		}
 
 		ipStr := r.Header.Get("X-Real-IP")
-		if ip, _, err = net.ParseCIDR(ipStr); err == nil && network.Contains(ip) {
+		if ip := net.ParseIP(ipStr); network.Contains(ip) {
 			stats, err = getStats(r.Context(), db)
 			if err != nil {
 				apperrors.HandleInternalError(w)
