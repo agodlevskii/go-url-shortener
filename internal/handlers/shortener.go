@@ -90,7 +90,7 @@ func WebShortener(db storage.Storager, cfg APIConfig) http.HandlerFunc {
 }
 
 // APIBatchShortener handles the batch URL shortener request through API.
-// The handler validates the request body to match the BatchReqData format.
+// The handler validates the request body to match the BatchOriginalData format.
 // For each provided URL, the handler generates the shortened version and stores it in storage.ShortURL format.
 func APIBatchShortener(db storage.Storager, cfg APIConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

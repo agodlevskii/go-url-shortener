@@ -39,7 +39,8 @@ func GetShortURLsFromBatch(ctx context.Context, db storage.Storager, data []Batc
 
 // shortenBatchData provides the short version of each URL provided in a batch request.
 // The function checks for the newly generated ID not to be associated with the existing DB entry.
-func shortenBatchData(ctx context.Context, db storage.Storager, req []BatchOriginalData, userID string) ([]storage.ShortURL, error) {
+func shortenBatchData(ctx context.Context, db storage.Storager,
+	req []BatchOriginalData, userID string) ([]storage.ShortURL, error) {
 	batch := make([]storage.ShortURL, len(req))
 	for i, data := range req {
 		id, err := generators.GenerateID(ctx, db, 7)
@@ -59,7 +60,8 @@ func shortenBatchData(ctx context.Context, db storage.Storager, req []BatchOrigi
 
 // getResponseData transforms the batch request into the batch response.
 // Each original URL has its own ID by this moment; the function only combines the existing data.
-func getShortenedData(req []BatchOriginalData, res []storage.ShortURL, baseURL string) []BatchShortenedData {
+func getShortenedData(req []BatchOriginalData, res []storage.ShortURL,
+	baseURL string) []BatchShortenedData {
 	resData := make([]BatchShortenedData, len(req))
 	urlToCorID := getURLToCorrelationIDMap(req)
 
@@ -73,7 +75,8 @@ func getShortenedData(req []BatchOriginalData, res []storage.ShortURL, baseURL s
 	return resData
 }
 
-// getURLToCorrelationIDMap transforms the batch request into the map with original URL as key and the correlation ID as value.
+// getURLToCorrelationIDMap transforms the batch request into a map.
+// The resulting map contains the original URL as key and the correlation ID as value.
 // It is required to combine the shortened URL with associated correlation IDs.
 func getURLToCorrelationIDMap(req []BatchOriginalData) map[string]string {
 	res := make(map[string]string, len(req))
