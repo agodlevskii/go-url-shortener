@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"go-url-shortener/internal/services"
 	"net/http"
 
 	log "github.com/sirupsen/logrus"
@@ -23,12 +24,17 @@ func GetUserLinks(db storage.Storager, cfg APIConfig) http.HandlerFunc {
 			return
 		}
 
-		list := getLinks(r.Context(), db, userID, cfg.GetBaseURL())
+		list, err := services.GetUserURLs(r.Context(), db, userID, cfg.GetBaseURL())
+		if err != nil {
+			apperrors.HandleHTTPError(w, apperrors.NewError("", err), http.StatusInternalServerError)
+			return
+		}
+
 		if len(list) == 0 {
 			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			w.WriteHeader(http.StatusNoContent)
 			if _, err = w.Write([]byte("No results found.")); err != nil {
-				log.Error(err)
+				apperrors.HandleHTTPError(w, apperrors.NewError("", err), http.StatusInternalServerError)
 			}
 			return
 		}
@@ -36,7 +42,7 @@ func GetUserLinks(db storage.Storager, cfg APIConfig) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		if err = json.NewEncoder(w).Encode(list); err != nil {
-			apperrors.HandleInternalError(w)
+			apperrors.HandleHTTPError(w, apperrors.NewError("", err), http.StatusInternalServerError)
 		}
 	}
 }
@@ -71,50 +77,12 @@ func DeleteUserLinks(db storage.Storager, cfg APIConfig) http.HandlerFunc {
 
 		go func() {
 			pool <- func() {
-				deleteLinks(context.Background(), db, userID, ids)
+				if err = services.DeleteUserURLs(context.Background(), db, userID, ids); err != nil {
+					log.Error(err)
+				}
 			}
 		}()
 
 		w.WriteHeader(http.StatusAccepted)
-	}
-}
-
-// getLinks recovers the user-associated links from the repository.
-// In case if there are no links to return, the function returns nil instead of the empty slice.
-func getLinks(ctx context.Context, db storage.Storager, userID, baseURL string) []UserLink {
-	urls, err := db.GetAll(ctx, userID, false)
-	if err != nil {
-		log.Error(err)
-		return nil
-	}
-
-	if len(urls) == 0 {
-		return nil
-	}
-
-	links := make([]UserLink, 0)
-	for _, url := range urls {
-		links = append(links, UserLink{
-			Short:    baseURL + "/" + url.ID,
-			Original: url.URL,
-		})
-	}
-
-	return links
-}
-
-// getLinks deletes the user-associated links from the repository.
-// The listed entities remain in the repository, but each of them gets their deletion flag set to true.
-func deleteLinks(ctx context.Context, db storage.Storager, userID string, ids []string) {
-	batch := make([]storage.ShortURL, 0, len(ids))
-	for _, v := range ids {
-		batch = append(batch, storage.ShortURL{
-			ID:  v,
-			UID: userID,
-		})
-	}
-
-	if err := db.Delete(ctx, batch); err != nil {
-		log.Error(err)
 	}
 }

@@ -1,9 +1,8 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
-	"errors"
+	"go-url-shortener/internal/services"
 	"io"
 	"net/http"
 
@@ -11,10 +10,8 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"go-url-shortener/internal/apperrors"
-	"go-url-shortener/internal/generators"
 	"go-url-shortener/internal/middlewares"
 	"go-url-shortener/internal/storage"
-	"go-url-shortener/internal/validators"
 )
 
 // PostRequest describes the body for a single URL shorten request coming from API.
@@ -27,66 +24,33 @@ type PostResponse struct {
 	Result string `json:"result"`
 }
 
-// UserLink describes the response for the list of all user's links.
-// Each entity includes both original and shortened URLs.
-type UserLink struct {
-	Short    string `json:"short_url"`
-	Original string `json:"original_url"`
-}
-
-// BatchReqData describes the body for a batch URL shorten request.
-// Each entity of a batch request must have a correlation ID to identify the shortened versions in the response.
-// The response structure is defined in BatchResData.
-type BatchReqData struct {
-	CorrelationID string `json:"correlation_id"`
-	OriginalURL   string `json:"original_url"`
-}
-
-// BatchResData describes the response of a batch URL shorten request.
-// Each entity of a batch response has a correlation ID to identify the shortened versions from the request.
-// The request structure is defined in BatchReqData.
-type BatchResData struct {
-	CorrelationID string `json:"correlation_id"`
-	ShortURL      string `json:"short_url"`
-}
-
 // APIShortener handles the URL shortener request through API.
 // The handler validates the request body to be a non-empty string of the valid format.
 // It generates the shortened version and stores it in storage.ShortURL format.
 func APIShortener(db storage.Storager, cfg APIConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req PostRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			apperrors.HandleHTTPError(w, apperrors.NewError(apperrors.URLFormat, err), http.StatusBadRequest)
-			return
-		}
-
-		uri := req.URL
-		if !validators.IsURLStringValid(uri) {
-			apperrors.HandleURLError(w)
-			return
-		}
-
 		userID, err := middlewares.GetUserID(cfg, r)
 		if err != nil {
 			apperrors.HandleUserError(w)
 			return
 		}
 
-		shortURI, chg, err := shortenURL(r.Context(), db, userID, uri, cfg.GetBaseURL())
-		if err != nil {
-			apperrors.HandleHTTPError(w, apperrors.EmptyError(), http.StatusInternalServerError)
+		var req PostRequest
+		if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
+			apperrors.HandleHTTPError(w, apperrors.NewError(apperrors.URLFormat, err), http.StatusBadRequest)
 			return
 		}
 
-		res := PostResponse{Result: shortURI}
-		w.Header().Set("Content-Type", "application/json")
-		if chg {
-			w.WriteHeader(http.StatusConflict)
-		} else {
-			w.WriteHeader(http.StatusCreated)
+		uri := req.URL
+		shortURL, urlChanged, sErr := services.GetShortURL(r.Context(), db, uri, userID, cfg.GetBaseURL())
+		if sErr != nil {
+			handleShortenerError(w, sErr)
+			return
 		}
 
+		res := PostResponse{Result: shortURL}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(getShortURLStatus(urlChanged))
 		if err = json.NewEncoder(w).Encode(res); err != nil {
 			log.Error(err)
 		}
@@ -98,6 +62,12 @@ func APIShortener(db storage.Storager, cfg APIConfig) http.HandlerFunc {
 // It generates the shortened version and stores it in storage.ShortURL format.
 func WebShortener(db storage.Storager, cfg APIConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		userID, err := middlewares.GetUserID(cfg, r)
+		if err != nil {
+			apperrors.HandleUserError(w)
+			return
+		}
+
 		b, err := io.ReadAll(r.Body)
 		if err != nil || len(b) == 0 {
 			apperrors.HandleURLError(w)
@@ -105,31 +75,15 @@ func WebShortener(db storage.Storager, cfg APIConfig) http.HandlerFunc {
 		}
 
 		uri := string(b)
-		if !validators.IsURLStringValid(uri) {
-			apperrors.HandleURLError(w)
-			return
-		}
-
-		userID, err := middlewares.GetUserID(cfg, r)
-		if err != nil {
-			apperrors.HandleUserError(w)
-			return
-		}
-
-		res, chg, err := shortenURL(r.Context(), db, userID, uri, cfg.GetBaseURL())
-		if err != nil {
-			apperrors.HandleHTTPError(w, apperrors.EmptyError(), http.StatusInternalServerError)
+		shortURL, urlChanged, sErr := services.GetShortURL(r.Context(), db, uri, userID, cfg.GetBaseURL())
+		if sErr != nil {
+			handleShortenerError(w, sErr)
 			return
 		}
 
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		if chg {
-			w.WriteHeader(http.StatusConflict)
-		} else {
-			w.WriteHeader(http.StatusCreated)
-		}
-
-		if _, err = w.Write([]byte(res)); err != nil {
+		w.WriteHeader(getShortURLStatus(urlChanged))
+		if _, err = w.Write([]byte(shortURL)); err != nil {
 			log.Error(err)
 		}
 	}
@@ -146,25 +100,18 @@ func APIBatchShortener(db storage.Storager, cfg APIConfig) http.HandlerFunc {
 			return
 		}
 
-		var req []BatchReqData
-		if err = json.NewDecoder(r.Body).Decode(&req); err != nil || len(req) == 0 {
+		var data []services.BatchOriginalData
+		if err = json.NewDecoder(r.Body).Decode(&data); err != nil || len(data) == 0 {
 			apperrors.HandleHTTPError(w, apperrors.NewError(apperrors.BatchFormat, err), http.StatusBadRequest)
 			return
 		}
 
-		batch, err := getBatch(r.Context(), db, req, userID)
+		resData, err := services.GetShortURLsFromBatch(r.Context(), db, data, userID, cfg.GetBaseURL())
 		if err != nil {
 			apperrors.HandleInternalError(w)
 			return
 		}
 
-		res, err := db.Add(r.Context(), batch)
-		if err != nil {
-			apperrors.HandleInternalError(w)
-			return
-		}
-
-		resData := getResponseData(req, res, cfg.GetBaseURL())
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(201)
 		if err = json.NewEncoder(w).Encode(resData); err != nil {
@@ -179,14 +126,14 @@ func APIBatchShortener(db storage.Storager, cfg APIConfig) http.HandlerFunc {
 func WebGetFullURL(db storage.Storager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := chi.URLParam(r, "id")
-		sURL, err := db.Get(r.Context(), id)
+		sURL, err := services.GetFullURL(r.Context(), db, id)
 		if err != nil {
-			apperrors.HandleHTTPError(w, apperrors.NewError("", err), http.StatusBadRequest)
-			return
-		}
+			status := http.StatusBadRequest
+			if err.Error() == apperrors.URLGone {
+				status = http.StatusGone
+			}
 
-		if sURL.Deleted {
-			apperrors.HandleHTTPError(w, apperrors.NewError(apperrors.URLGone, nil), http.StatusGone)
+			apperrors.HandleHTTPError(w, err, status)
 			return
 		}
 
@@ -194,76 +141,17 @@ func WebGetFullURL(db storage.Storager) http.HandlerFunc {
 	}
 }
 
-// shortenURL provides the short version of the provided URL via the random string generation.
-// The original URL goes through the validation process to avoid the redirect-related issues in the future.
-// The generated shortened URL is being checked not to be associated with the existing DB entry.
-func shortenURL(ctx context.Context, db storage.Storager, userID, uri, baseURL string) (string, bool, error) {
-	if !validators.IsURLStringValid(uri) {
-		return "", false, errors.New(apperrors.URLFormat)
+func getShortURLStatus(urlChanged bool) int {
+	if urlChanged {
+		return http.StatusConflict
 	}
-
-	id, err := generators.GenerateID(ctx, db, 7)
-	if err != nil {
-		return "", false, err
-	}
-
-	res, err := db.Add(ctx, []storage.ShortURL{
-		{
-			ID:  id,
-			URL: uri,
-			UID: userID,
-		},
-	})
-	if err != nil {
-		return "", false, err
-	}
-
-	url := baseURL + "/" + res[0].ID
-	return url, res[0].ID != id, nil
+	return http.StatusCreated
 }
 
-// getBatch provides the short version of each URL provided in a batch request.
-// The function checks for the newly generated ID not to be associated with the existing DB entry.
-func getBatch(ctx context.Context, db storage.Storager, req []BatchReqData, userID string) ([]storage.ShortURL, error) {
-	batch := make([]storage.ShortURL, len(req))
-	for i, data := range req {
-		id, err := generators.GenerateID(ctx, db, 7)
-		if err != nil {
-			return nil, err
-		}
-
-		batch[i] = storage.ShortURL{
-			ID:  id,
-			URL: data.OriginalURL,
-			UID: userID,
-		}
+func handleShortenerError(w http.ResponseWriter, err *apperrors.AppError) {
+	if err.Error() == apperrors.URLFormat {
+		apperrors.HandleURLError(w)
+	} else {
+		apperrors.HandleHTTPError(w, apperrors.EmptyError(), http.StatusInternalServerError)
 	}
-
-	return batch, nil
-}
-
-// getResponseData transforms the batch request into the batch response.
-// Each original URL has its own ID by this moment; the function only combines the existing data.
-func getResponseData(req []BatchReqData, res []storage.ShortURL, baseURL string) []BatchResData {
-	resData := make([]BatchResData, len(req))
-	urlToCorID := getURLToCorIDMap(req)
-
-	for i, sURL := range res {
-		resData[i] = BatchResData{
-			CorrelationID: urlToCorID[sURL.URL],
-			ShortURL:      baseURL + "/" + sURL.ID,
-		}
-	}
-
-	return resData
-}
-
-// getURLToCorIDMap transforms the batch request into the map with original URL as key and the correlation ID as value.
-// It is required to combine the shortened URL with associated correlation IDs.
-func getURLToCorIDMap(req []BatchReqData) map[string]string {
-	res := make(map[string]string, len(req))
-	for _, data := range req {
-		res[data.OriginalURL] = data.CorrelationID
-	}
-	return res
 }
