@@ -1,6 +1,6 @@
 syntax = "proto3";
 package grpc_shortener;
-option go_package = "grpc/shortener";
+option go_package = "grpc_shortener/proto";
 
 message BatchOriginal {
   string correlation_id = 1;
