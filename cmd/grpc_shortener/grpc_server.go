@@ -149,8 +149,8 @@ func getIPFromContext(ctx context.Context) (string, bool) {
 		if len(xForwardFor) > 0 && xForwardFor[0] != "" {
 			ips := strings.Split(xForwardFor[0], ",")
 			if len(ips) > 0 {
-				clientIp := ips[0]
-				return clientIp, true
+				clientIP := ips[0]
+				return clientIP, true
 			}
 		}
 	}
