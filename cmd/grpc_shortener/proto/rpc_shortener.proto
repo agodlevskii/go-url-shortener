@@ -1,0 +1,100 @@
+syntax = "proto3";
+package grpc_shortener;
+option go_package = "grpc/shortener";
+
+message BatchOriginal {
+  string correlation_id = 1;
+  string original_url = 2;
+}
+
+message BatchShort {
+  string correlation_id = 1;
+  string short_url = 2;
+}
+
+message FullUrlRequest {
+  string id = 1;
+}
+
+message FullUrlResponse {
+  string url = 1;
+}
+
+message PingRequest {
+  string uid = 1;
+}
+
+message PingResponse {
+  string result = 1;
+}
+
+message ShortRequest {
+  string uri = 1;
+  string uid = 2;
+}
+
+message ShortResponse {
+  string result = 1;
+}
+
+message ShortUrl {
+  string id = 1;
+  string url = 2;
+  string uid = 3;
+  bool deleted = 4;
+}
+
+message ShortBatchRequest {
+  string uid = 1;
+  repeated BatchOriginal batch_original = 2;
+}
+
+message ShortBatchResponse {
+  repeated BatchShort batch_short = 1;
+}
+
+message Stats {
+  uint32 urls = 1;
+  uint32 users = 2;
+}
+
+message StatsRequest {
+  string ip = 1;
+}
+
+message StatsResponse {
+  Stats stats = 1;
+}
+
+message UserUrl {
+  string short = 1;
+  string original = 2;
+}
+
+message UserUrlsDeleteRequest {
+  string uid = 1;
+  repeated string ids = 2;
+}
+
+message UserUrlsDeleteResponse {
+  string result = 1;
+}
+
+message UserUrlsGetRequest {
+  string uid = 1;
+}
+
+message UserUrlsGetResponse {
+  repeated UserUrl user_urls = 1;
+}
+
+
+service ShortService {
+  rpc GetFullUrl(FullUrlRequest) returns (FullUrlResponse);
+  rpc GetUserUrls(UserUrlsGetRequest) returns (UserUrlsGetResponse);
+  rpc DeleteUserUrls(UserUrlsDeleteRequest) returns (UserUrlsDeleteResponse);
+  rpc Ping(PingRequest) returns (PingResponse);
+  rpc Shorten(ShortRequest) returns (ShortResponse);
+  rpc ShortenBatch(ShortBatchRequest) returns (ShortBatchResponse);
+  rpc Statistics(StatsRequest) returns (StatsResponse);
+}
