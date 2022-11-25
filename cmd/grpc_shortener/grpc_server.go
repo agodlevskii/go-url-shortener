@@ -10,9 +10,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
-	pb "go-url-shortener/cmd/grpc_shortener/proto"
 	"go-url-shortener/internal/apperrors"
 	"go-url-shortener/internal/config"
+	pb "go-url-shortener/internal/grpc_shortener/proto"
 	"go-url-shortener/internal/services"
 	"go-url-shortener/internal/storage"
 )
