@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"go-url-shortener/internal/services"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -227,7 +228,7 @@ func TestWebGetFullURL(t *testing.T) {
 func TestAPIBatchShortener(t *testing.T) {
 	type args struct {
 		cookie *http.Cookie
-		body   []BatchReqData
+		body   []services.BatchOriginalData
 	}
 	type want struct {
 		code int
@@ -257,7 +258,7 @@ func TestAPIBatchShortener(t *testing.T) {
 			name: "Correct body",
 			args: args{
 				cookie: &http.Cookie{Name: UserCookieName, Value: UserIDEnc, Path: "/"},
-				body: []BatchReqData{
+				body: []services.BatchOriginalData{
 					{CorrelationID: "google", OriginalURL: "https://google.com"},
 					{CorrelationID: "facebook", OriginalURL: "https://facebook.com"},
 				},

@@ -22,6 +22,7 @@ type Config struct {
 	Filename       string `json:"file_storage_path" env:"FILE_STORAGE_PATH"`
 	PoolSize       int    `json:"pool_size" env:"POOL_SIZE" envDefault:"10"`
 	Secure         bool   `json:"enable_https" env:"ENABLE_HTTPS"`
+	TrustedSubnet  string `json:"trusted_subnet" env:"TRUSTED_SUBNET"`
 	UserCookieName string `json:"user_cookie" env:"USER_COOKIE" envDefault:"user_id"`
 }
 
@@ -53,6 +54,7 @@ func WithFlags() func(*Config) {
 		flag.StringVar(&cfg.DBURL, "d", cfg.DBURL, "The DB connection URL")
 		flag.BoolVar(&cfg.Secure, "s", cfg.Secure, "The HTTPS connection config")
 		flag.StringVar(&cfg.Filename, "f", cfg.Filename, "The file storage name")
+		flag.StringVar(&cfg.TrustedSubnet, "t", cfg.TrustedSubnet, "The internal subnet IP address")
 		flag.Parse()
 	}
 }
@@ -132,4 +134,8 @@ func (c *Config) GetStorageFileName() string {
 
 func (c *Config) GetUserCookieName() string {
 	return c.UserCookieName
+}
+
+func (c *Config) GetTrustedSubnet() string {
+	return c.TrustedSubnet
 }

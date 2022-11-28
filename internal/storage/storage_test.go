@@ -187,7 +187,7 @@ func TestRepo_Clear(t *testing.T) {
 
 				r.Clear(context.Background())
 
-				res, err := r.GetAll(context.Background(), UserID)
+				res, err := r.GetAll(context.Background(), UserID, false)
 				if err != nil {
 					t.Error(err)
 				}
@@ -251,7 +251,7 @@ func TestRepo_GetAll(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				got, err := r.GetAll(context.Background(), UserID)
+				got, err := r.GetAll(context.Background(), UserID, false)
 				gotMap := make(map[string]bool)
 				for _, gv := range got {
 					gotMap[gv.ID] = true

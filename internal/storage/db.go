@@ -24,6 +24,7 @@ const (
 	GetURLID       = `SELECT id FROM urls WHERE url = $1`
 	GetURL         = `SELECT * FROM urls WHERE id = $1`
 	GetUserURLs    = `SELECT * FROM urls WHERE uid = $1`
+	GetAllURLs     = `SELECT * FROM urls`
 	DeleteURL      = `UPDATE urls u SET deleted = true WHERE u.id <> '' IS NOT TRUE`
 	DeleteUserURLs = `UPDATE urls SET deleted = true WHERE uid = $1 AND id = any($2)`
 )
@@ -124,8 +125,13 @@ func (repo DBRepo) Get(ctx context.Context, id string) (ShortURL, error) {
 // GetAll returns all the ShortURL values created by the specified user.
 // If the repository doesn't have any associated value, the empty slice will be returned.
 // If the select query fails, the error will be returned.
-func (repo DBRepo) GetAll(ctx context.Context, userID string) ([]ShortURL, error) {
-	rows, err := repo.db.QueryContext(ctx, GetUserURLs, userID)
+func (repo DBRepo) GetAll(ctx context.Context, userID string, isStat bool) ([]ShortURL, error) {
+	req := GetUserURLs
+	if isStat {
+		req = GetAllURLs
+	}
+
+	rows, err := repo.db.QueryContext(ctx, req, userID)
 	if err != nil {
 		return nil, err
 	}

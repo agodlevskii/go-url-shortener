@@ -52,12 +52,12 @@ func (m *MemoRepo) Get(_ context.Context, id string) (ShortURL, error) {
 
 // GetAll returns all the ShortURL values created by the specified user.
 // If the repository doesn't have any associated value, the empty slice will be returned.
-func (m *MemoRepo) GetAll(_ context.Context, userID string) ([]ShortURL, error) {
+func (m *MemoRepo) GetAll(_ context.Context, userID string, isStat bool) ([]ShortURL, error) {
 	urls := make([]ShortURL, 0)
 
 	m.db.Range(func(_, v interface{}) bool {
 		sURL := v.(ShortURL)
-		if sURL.UID == userID {
+		if isStat || sURL.UID == userID {
 			urls = append(urls, sURL)
 		}
 		return true
