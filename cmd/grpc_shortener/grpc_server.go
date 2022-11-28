@@ -30,7 +30,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	listen, err := net.Listen("tcp", ":3200")
+	addr := strings.Replace(cfg.GetServerAddr(), ":8080", ":3200", 1)
+	listen, err := net.Listen("tcp", addr)
 	if err != nil {
 		log.Fatal(err)
 	}
